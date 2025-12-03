@@ -351,13 +351,6 @@
              ========================================= -->
         <div id="right-panel">
             <h1>✨ 4けた パスワードを プログラムでさがそう！</h1>
-
-            <div id="helper">
-                <p>🌟 <strong>ルール</strong></p>
-                <p>4けた の ひみつパスワードを、プログラムでみつけよう！<br>
-                    実行すると、パスワードをチェックしている様子がログに出るよ。</p>
-            </div>
-
             <h2>総当たりで 4けたの秘密の数字を見つけよう！</h2>
             <p>きみが書くのは、<strong>「しらべる4けたの数字を作る 1行」</strong>だけ！</p>
 
@@ -367,7 +360,7 @@
                     <button type="button" data-hint="1">ヒントのコードを表示</button>
                 </div>
                 <div id="hint1" class="hint-text">
-                    <p>今回はこれを打ち込もう！</p>
+                    <p>今回はこれをコピーしよう！</p>
                     <div class="copy-container">
                         <code id="codeToCopy">const candidate = digits[a] + digits[b] + digits[c] + digits[d];</code>
                         <button id="copyHintBtn" class="copy-btn">コピー</button>
@@ -385,7 +378,7 @@
       for (let c = 0; c < 10; c++) {
         for (let d = 0; d < 10; d++) {
 
-          <span class="editable-line">  </span> // ← ここの1行だけを じぶんで書きかえる！
+          <span class="editable-line">  </span> // ← ここの黄色をクリックして、ctrlを押しながらVを押す！
           
           // チェック中の数字をログに出す
           log("チェック中... " + candidate); 
@@ -406,7 +399,6 @@
 }
 solve();</pre>
             <button id="runBtn">実行！</button>
-            <div id="output">実行ボタンをおすと、ここにログが流れるよ...</div>
         </div>
     </div>
 
