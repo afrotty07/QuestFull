@@ -31,14 +31,16 @@
         /* --- 左側のパネル（ゲーム画面） --- */
         #left-panel {
             flex: 1;
+            /* 初期状態は全幅 */
             background-color: #e2e8f0;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow-y: auto; /* 必要に応じてスクロール */
-            transition: background 0.5s ease;
+            transition: all 0.5s ease; /* サイズ変更などをアニメーション */
             border-right: 2px solid #ccc;
+            z-index: 10;
         }
 
         /* 左パネル専用：正解時の豪華な背景アニメーション */
@@ -56,12 +58,28 @@
 
         /* --- 右側のパネル（プログラミング画面） --- */
         #right-panel {
-            flex: 1;
+            /* 初期状態：隠す */
+            flex: 0;
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+            opacity: 0;
+            
             background-color: #f5f5f5;
-            padding: 20px;
-            overflow-y: auto; /* 長い場合はスクロール */
             line-height: 1.6;
             color: #333;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* スムーズな開閉 */
+            border-left: 1px solid transparent;
+        }
+
+        /* 右パネルが開いた時のクラス */
+        #right-panel.open {
+            flex: 1;
+            width: auto;
+            padding: 20px;
+            opacity: 1;
+            border-left: 1px solid #ccc;
+            overflow-y: auto;
         }
 
         /* =========================================
@@ -161,6 +179,41 @@
         }
         .card-footer { font-size: 0.7rem; color: #94a3b8; text-align: center; }
 
+        /* トリガーボタン（プログラミングモードを開く） */
+        .prog-trigger-wrapper {
+            margin-top: 20px;
+            text-align: center;
+            display: none; /* 初期状態は非表示（JSで制御） */
+            animation: bounceIn 0.5s ease forwards;
+        }
+        .prog-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .prog-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .prog-btn:active {
+            transform: translateY(0);
+        }
+        .prog-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
 
         /* =========================================
            以下、右側（プログラミング）用のスタイル
@@ -242,8 +295,9 @@
         @media (max-width: 800px) {
             .split-container { flex-direction: column; overflow-y: auto; }
             body { overflow: auto; }
-            #left-panel { min-height: 100vh; border-right: none; border-bottom: 2px solid #ccc; }
-            #right-panel { min-height: 100vh; }
+            #left-panel { min-height: 100vh; border-right: none; border-bottom: 2px solid #ccc; width: 100%; flex: none; }
+            #right-panel { width: 100%; flex: none; }
+            #right-panel.open { min-height: 100vh; }
         }
     </style>
 </head>
@@ -278,6 +332,15 @@
                 </section>
 
                 <section id="digits-grid" class="digits-grid"></section>
+                
+                <!-- 新しいボタンを追加 -->
+                <div id="prog-trigger-wrapper" class="prog-trigger-wrapper">
+                    <button id="open-prog-btn" class="prog-btn">
+                        <!-- Code Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H9v-2h6v2zm-3-7l-2.5-2.5L12 6l2.5 2.5L12 11zm7 5h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V6h4v2z"/></svg>
+                        <span>プログラミングで<br>4桁の総当たりをする</span>
+                    </button>
+                </div>
 
                 <footer class="card-footer"></footer>
             </div>
@@ -296,7 +359,7 @@
             </div>
 
             <h2>総当たりで 4けたの秘密の数字を見つけよう！</h2>
-            <p>今回きみが書くのは、<strong>「しらべる4けたの数字を作る 1行」</strong>だけ！</p>
+            <p>きみが書くのは、<strong>「しらべる4けたの数字を作る 1行」</strong>だけ！</p>
 
             <div id="hint-box">
                 <strong>🔍 うちこむコードを見てみよう！</strong>
@@ -304,7 +367,7 @@
                     <button type="button" data-hint="1">ヒントのコードを表示</button>
                 </div>
                 <div id="hint1" class="hint-text">
-                    <p>今回はこれをコピーしよう！</p>
+                    <p>今回はこれを打ち込もう！</p>
                     <div class="copy-container">
                         <code id="codeToCopy">const candidate = digits[a] + digits[b] + digits[c] + digits[d];</code>
                         <button id="copyHintBtn" class="copy-btn">コピー</button>
@@ -369,7 +432,7 @@ solve();</pre>
                 2: {
                     code: "0213",
                     length: 4,
-                    title: "4桁のパスワードをあてよう",
+                    title: "4桁パスコードで日付をあてよう",
                     subtitle: "今度は、４桁は突破できるかな？！画面の数字だけを使って入力してみよう。",
                     idleMessage: "4桁すべて入力すると結果が表示されるよ！。",
                 }
@@ -390,6 +453,11 @@ solve();</pre>
             const messageText = document.getElementById("message-text");
             const statusImage = document.getElementById("status-image");
             const imageContainer = document.getElementById("image-circle-container");
+            
+            // 追加要素
+            const rightPanel = document.getElementById("right-panel");
+            const progTriggerWrapper = document.getElementById("prog-trigger-wrapper");
+            const openProgBtn = document.getElementById("open-prog-btn");
 
             function triggerConfetti() {
                 const duration = 2000;
@@ -428,7 +496,15 @@ solve();</pre>
                 
                 if (!(currentStage === 1 && status === "success")) {
                     imageContainer.classList.remove("animate-tada");
-                    leftPanel.classList.remove("success-mode"); // bodyではなくleftPanelを変更
+                    leftPanel.classList.remove("success-mode");
+                }
+
+                // --- 追加ロジック: ステージ2になったらボタンを表示 ---
+                if (currentStage === 2) {
+                    progTriggerWrapper.style.display = "block";
+                } else {
+                    progTriggerWrapper.style.display = "none";
+                    rightPanel.classList.remove("open"); // ステージ1に戻ったら閉じる（念の為）
                 }
 
                 if (status === "idle") {
@@ -508,6 +584,24 @@ solve();</pre>
                 input = "";
                 status = "idle";
                 updateUI();
+            });
+
+            // トリガーボタンのイベント
+            openProgBtn.addEventListener("click", () => {
+                rightPanel.classList.add("open");
+                // ボタンは役割を終えたので消す、あるいは残しておく？
+                // 一度開いたら閉じない仕様であれば消しても良いが、
+                // トグルできるようにするなら残す。今回は「現れる」目的なので、
+                // 開いた後はボタンを目立たなくするか消すのが自然。
+                // ここでは非表示にします。
+                progTriggerWrapper.style.display = "none";
+                
+                // モバイルなどではスクロールが必要かも
+                setTimeout(() => {
+                    if (window.innerWidth <= 800) {
+                         rightPanel.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 300);
             });
 
             function setupDigitButtons() {
