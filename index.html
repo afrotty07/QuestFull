@@ -351,6 +351,13 @@
              ========================================= -->
         <div id="right-panel">
             <h1>✨ 4けた パスワードを プログラムでさがそう！</h1>
+
+            <div id="helper">
+                <p>🌟 <strong>ルール</strong></p>
+                <p>4けた の ひみつパスワードを、プログラムでみつけよう！<br>
+                    実行すると、パスワードをチェックしている様子がログに出るよ。</p>
+            </div>
+
             <h2>総当たりで 4けたの秘密の数字を見つけよう！</h2>
             <p>きみが書くのは、<strong>「しらべる4けたの数字を作る 1行」</strong>だけ！</p>
 
@@ -360,7 +367,7 @@
                     <button type="button" data-hint="1">ヒントのコードを表示</button>
                 </div>
                 <div id="hint1" class="hint-text">
-                    <p>今回はこれをコピーしよう！</p>
+                    <p>今回はこれを打ち込もう！</p>
                     <div class="copy-container">
                         <code id="codeToCopy">const candidate = digits[a] + digits[b] + digits[c] + digits[d];</code>
                         <button id="copyHintBtn" class="copy-btn">コピー</button>
@@ -378,7 +385,7 @@
       for (let c = 0; c < 10; c++) {
         for (let d = 0; d < 10; d++) {
 
-          <span class="editable-line">  </span> // ← ここの黄色をクリックして、ctrlを押しながらVを押す！
+          <span class="editable-line">  </span> // ← ここの1行だけを じぶんで書きかえる！
           
           // チェック中の数字をログに出す
           log("チェック中... " + candidate); 
@@ -402,7 +409,6 @@ solve();</pre>
             <div id="output">実行ボタンをおすと、ここにログが流れるよ...</div>
         </div>
     </div>
-
 
     <!-- =========================================
          スクリプト
@@ -436,7 +442,6 @@ solve();</pre>
             let input = "";
             let status = "idle";
             let isTransitioning = false;
-            let stage2FailCount = 0; // 失敗回数をカウントする変数を追加
 
             const leftPanel = document.getElementById("left-panel");
             const cardTitle = document.getElementById("card-title");
@@ -494,17 +499,12 @@ solve();</pre>
                     leftPanel.classList.remove("success-mode");
                 }
 
-                // --- 追加ロジック: ステージ2で2回以上間違えたらボタンを表示 ---
-                // また、右パネルがすでに開いているときは表示しない
-                if (currentStage === 2 && stage2FailCount >= 2 && !rightPanel.classList.contains("open")) {
+                // --- 追加ロジック: ステージ2になったらボタンを表示 ---
+                if (currentStage === 2) {
                     progTriggerWrapper.style.display = "block";
                 } else {
                     progTriggerWrapper.style.display = "none";
-                }
-                
-                // ステージ1に戻るなどした場合は右パネルを閉じる処理（今回は一方通行なので念の為）
-                if (currentStage !== 2) {
-                     rightPanel.classList.remove("open");
+                    rightPanel.classList.remove("open"); // ステージ1に戻ったら閉じる（念の為）
                 }
 
                 if (status === "idle") {
@@ -545,7 +545,6 @@ solve();</pre>
                     currentStage = 2;
                     input = "";
                     status = "idle";
-                    stage2FailCount = 0; // ステージ2開始時にカウントをリセット
                     isTransitioning = false;
                     leftPanel.classList.remove("success-mode");
                     messageArea.classList.remove("success-style");
@@ -573,10 +572,6 @@ solve();</pre>
                         }
                     } else {
                         status = "error";
-                        // ステージ2で間違えた場合、カウントを増やす
-                        if (currentStage === 2) {
-                            stage2FailCount++;
-                        }
                     }
                 } else {
                     status = "idle";
@@ -594,6 +589,11 @@ solve();</pre>
             // トリガーボタンのイベント
             openProgBtn.addEventListener("click", () => {
                 rightPanel.classList.add("open");
+                // ボタンは役割を終えたので消す、あるいは残しておく？
+                // 一度開いたら閉じない仕様であれば消しても良いが、
+                // トグルできるようにするなら残す。今回は「現れる」目的なので、
+                // 開いた後はボタンを目立たなくするか消すのが自然。
+                // ここでは非表示にします。
                 progTriggerWrapper.style.display = "none";
                 
                 // モバイルなどではスクロールが必要かも
