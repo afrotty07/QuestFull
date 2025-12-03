@@ -338,7 +338,7 @@
                     <button id="open-prog-btn" class="prog-btn">
                         <!-- Code Icon -->
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H9v-2h6v2zm-3-7l-2.5-2.5L12 6l2.5 2.5L12 11zm7 5h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V6h4v2z"/></svg>
-                        <span>プログラミングで<br>4桁の総当たりをする</span>
+                        <span>プログラミングで<br>4けたの総当たりをする</span>
                     </button>
                 </div>
 
@@ -360,7 +360,7 @@
                     <button type="button" data-hint="1">ヒントのコードを表示</button>
                 </div>
                 <div id="hint1" class="hint-text">
-                    <p>今回はこれを打ち込もう！</p>
+                    <p>今回はこれをコピーして貼り付けよう！</p>
                     <div class="copy-container">
                         <code id="codeToCopy">  
 // 0000 から 9999 まで順番にしらべる
@@ -376,7 +376,7 @@
 <pre id="editor" class="code" contenteditable="true">function solve() {
   const digits = ["0","1","2","3","4","5","6","7","8","9"];
   let count = 0;
-          <span class="editable-line">  </span> // ← ここにコピーした後に、ctrlを押しながらVを推して貼り付ける
+          <span class="editable-line">  </span> // ← ここにコピーした後に、ctrlを押しながらVをおして貼り付ける
           // チェック中の数字をログに出す
           log("チェック中... " + candidate); 
           count++;
@@ -421,7 +421,7 @@ solve();</pre>
                 2: {
                     code: "0213",
                     length: 4,
-                    title: "4けたパスワードをあてよう",
+                    title: "4けたパスワードを当てよう",
                     subtitle: "今度は、４けたは突破できるかな？！画面の数字だけを使って入力してみよう。",
                     idleMessage: "4けたすべて入力すると結果が表示されるよ！。",
                 }
