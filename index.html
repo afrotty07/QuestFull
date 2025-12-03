@@ -351,13 +351,6 @@
              ========================================= -->
         <div id="right-panel">
             <h1>✨ 4けた パスワードを プログラムでさがそう！</h1>
-
-            <div id="helper">
-                <p>🌟 <strong>ルール</strong></p>
-                <p>4けた の ひみつパスワードを、プログラムでみつけよう！<br>
-                    実行すると、パスワードをチェックしている様子がログに出るよ。</p>
-            </div>
-
             <h2>総当たりで 4けたの秘密の数字を見つけよう！</h2>
             <p>きみが書くのは、<strong>「しらべる4けたの数字を作る 1行」</strong>だけ！</p>
 
@@ -369,7 +362,11 @@
                 <div id="hint1" class="hint-text">
                     <p>今回はこれを打ち込もう！</p>
                     <div class="copy-container">
-                        <code id="codeToCopy">const candidate = digits[a] + digits[b] + digits[c] + digits[d];</code>
+                        <code id="codeToCopy">  // 0000 から 9999 まで順番にしらべる
+  for (let a = 0; a < 10; a++) {
+    for (let b = 0; b < 10; b++) {
+      for (let c = 0; c < 10; c++) {
+        for (let d = 0; d < 10; d++) {const candidate = digits[a] + digits[b] + digits[c] + digits[d];</code>
                         <button id="copyHintBtn" class="copy-btn">コピー</button>
                     </div>
                 </div>
@@ -379,11 +376,7 @@
   const digits = ["0","1","2","3","4","5","6","7","8","9"];
   let count = 0;
   
-  // 0000 から 9999 まで順番にしらべるよ
-  for (let a = 0; a < 10; a++) {
-    for (let b = 0; b < 10; b++) {
-      for (let c = 0; c < 10; c++) {
-        for (let d = 0; d < 10; d++) {
+
 
           <span class="editable-line">  </span> // ← ここの1行だけを じぶんで書きかえる！
           
