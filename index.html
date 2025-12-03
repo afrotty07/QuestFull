@@ -442,6 +442,7 @@ solve();</pre>
             let input = "";
             let status = "idle";
             let isTransitioning = false;
+            let stage2FailCount = 0; // 失敗回数をカウントする変数を追加
 
             const leftPanel = document.getElementById("left-panel");
             const cardTitle = document.getElementById("card-title");
@@ -499,12 +500,17 @@ solve();</pre>
                     leftPanel.classList.remove("success-mode");
                 }
 
-                // --- 追加ロジック: ステージ2になったらボタンを表示 ---
-                if (currentStage === 2) {
+                // --- 追加ロジック: ステージ2で2回以上間違えたらボタンを表示 ---
+                // また、右パネルがすでに開いているときは表示しない
+                if (currentStage === 2 && stage2FailCount >= 2 && !rightPanel.classList.contains("open")) {
                     progTriggerWrapper.style.display = "block";
                 } else {
                     progTriggerWrapper.style.display = "none";
-                    rightPanel.classList.remove("open"); // ステージ1に戻ったら閉じる（念の為）
+                }
+                
+                // ステージ1に戻るなどした場合は右パネルを閉じる処理（今回は一方通行なので念の為）
+                if (currentStage !== 2) {
+                     rightPanel.classList.remove("open");
                 }
 
                 if (status === "idle") {
@@ -545,6 +551,7 @@ solve();</pre>
                     currentStage = 2;
                     input = "";
                     status = "idle";
+                    stage2FailCount = 0; // ステージ2開始時にカウントをリセット
                     isTransitioning = false;
                     leftPanel.classList.remove("success-mode");
                     messageArea.classList.remove("success-style");
@@ -572,6 +579,10 @@ solve();</pre>
                         }
                     } else {
                         status = "error";
+                        // ステージ2で間違えた場合、カウントを増やす
+                        if (currentStage === 2) {
+                            stage2FailCount++;
+                        }
                     }
                 } else {
                     status = "idle";
@@ -589,11 +600,6 @@ solve();</pre>
             // トリガーボタンのイベント
             openProgBtn.addEventListener("click", () => {
                 rightPanel.classList.add("open");
-                // ボタンは役割を終えたので消す、あるいは残しておく？
-                // 一度開いたら閉じない仕様であれば消しても良いが、
-                // トグルできるようにするなら残す。今回は「現れる」目的なので、
-                // 開いた後はボタンを目立たなくするか消すのが自然。
-                // ここでは非表示にします。
                 progTriggerWrapper.style.display = "none";
                 
                 // モバイルなどではスクロールが必要かも
