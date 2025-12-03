@@ -656,6 +656,9 @@ solve();</pre>
             }
 
             runBtn.onclick = () => {
+                // 自動で出力エリアまでスクロール
+                output.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
                 output.textContent = "";
                 logQueue = [];
                 const code = editor.textContent;
