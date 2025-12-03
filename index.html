@@ -362,7 +362,8 @@
                 <div id="hint1" class="hint-text">
                     <p>今回はこれを打ち込もう！</p>
                     <div class="copy-container">
-                        <code id="codeToCopy">  // 0000 から 9999 まで順番にしらべる
+                        <code id="codeToCopy">  
+// 0000 から 9999 まで順番にしらべる
   for (let a = 0; a < 10; a++) {
     for (let b = 0; b < 10; b++) {
       for (let c = 0; c < 10; c++) {
@@ -375,14 +376,9 @@
 <pre id="editor" class="code" contenteditable="true">function solve() {
   const digits = ["0","1","2","3","4","5","6","7","8","9"];
   let count = 0;
-  
-
-
-          <span class="editable-line">  </span> // ← ここの1行だけを じぶんで書きかえる！
-          
+          <span class="editable-line">  </span> // ← ここにコピーした後に、ctrlを押しながらVを推して貼り付ける
           // チェック中の数字をログに出す
           log("チェック中... " + candidate); 
-
           count++;
           if (checkPassword(candidate)) {
             log("------------------------------");
@@ -417,7 +413,7 @@ solve();</pre>
                 1: {
                     code: "2",
                     length: 1,
-                    title: "１桁のパスワードを当てよう！",
+                    title: "１けたのパスワードを当てよう！",
                     subtitle: "画面の数字を使って、1桁の正解を見つけてね。",
                     idleMessage: "数字を1つ選んで入力してみよう。",
                     successSimple: "おめでとう🎊"
@@ -425,9 +421,9 @@ solve();</pre>
                 2: {
                     code: "0213",
                     length: 4,
-                    title: "4桁パスコードで日付をあてよう",
-                    subtitle: "今度は、４桁は突破できるかな？！画面の数字だけを使って入力してみよう。",
-                    idleMessage: "4桁すべて入力すると結果が表示されるよ！。",
+                    title: "4けたパスワードをあてよう",
+                    subtitle: "今度は、４けたは突破できるかな？！画面の数字だけを使って入力してみよう。",
+                    idleMessage: "4けたすべて入力すると結果が表示されるよ！。",
                 }
             };
 
@@ -521,7 +517,7 @@ solve();</pre>
                             '<p class="message-success-text">' +
                             "青翔開智中学校・高等学校の " +
                             '<span class="message-strong">青開学会</span> は、' +
-                            '<span class="message-strong">2月13日</span> に開催されます。<span class="message-strong">ぜひ来てね！</span>' +
+                            '<span class="message-strong">2月13日</span> に開催です。全国からいろんな人が観にくるよ！<span class="message-strong">ぜひ来てね！</span>' +
                             "</p>" +
                             '<p class="message-success-text" style="margin-top:8px;">スタンプラリーのキーワードは「<span class="message-strong">グローバル</span>」だよ！</p>' +
                             '<p>次のクエストに向かおう！</p>' +
