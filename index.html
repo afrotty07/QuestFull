@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#22594d">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2322594d'/%3E%3Cpath d='M32 17v33M10 15c9-2 15 0 22 5 7-5 13-7 22-5v31c-9-2-15 0-22 5-7-5-13-7-22-5Z' fill='none' stroke='%23fffdf7' stroke-width='4'/%3E%3C/svg%3E">
-  <title>ライブラリークエスト｜8冊から、1万冊へ。</title>
+  <title>ライブラリークエスト｜次の読者へのしおり</title>
   <style>
     :root { --ink: #233e37; --green: #22594d; --muted: #64736b; --line: #dce2d8; --cream: #f6f5ee; --yellow: #f4cb68; }
     * { box-sizing: border-box; }
@@ -31,7 +31,6 @@
     .step.done { background: #e0eade; color: var(--green); }
     .step-divider { width: 28px; height: 1px; background: #c7cec4; }
     .hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 24px; }
-    .eyebrow { font-size: .7rem; letter-spacing: .16em; font-weight: 800; color: var(--green); margin-bottom: 6px; }
     h1 { font-size: clamp(1.7rem, 3.1vw, 2.6rem); line-height: 1.4; letter-spacing: .02em; }
     .intro { color: var(--muted); font-size: .9rem; margin-top: 9px; }
     .guide { display: flex; align-items: center; gap: 12px; max-width: 295px; flex-shrink: 0; }
@@ -73,6 +72,7 @@
     .feedback.success { background: #e0efdf; color: #245433; font-weight: 700; }
     .progress-track { height: 5px; background: #e7eade; border-radius: 5px; overflow: hidden; margin-top: 16px; }
     .progress-fill { height: 100%; background: var(--green); width: 0; transition: width .15s; }
+    .actions + .pagination, .actions + .books { margin-top: 18px; }
     .actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 20px; }
     .primary { border: 0; background: var(--green); color: #fff; border-radius: 9px; padding: 12px 20px; font-weight: 700; font-size: .88rem; }
     .primary:hover:not(:disabled) { background: #153f35; }
@@ -81,8 +81,6 @@
     .program { padding: 24px; }
     .program h2 { font-size: 1.2rem; }
     .program .description { font-size: .83rem; color: var(--muted); margin: 9px 0 18px; }
-    .lesson-steps { display: flex; flex-wrap: wrap; gap: 8px; font-size: .73rem; margin-bottom: 15px; color: var(--green); }
-    .lesson-steps span { border-radius: 5px; background: #edf1e6; padding: 4px 8px; }
     details { font-size: .8rem; margin: 15px 0; }
     summary { cursor: pointer; color: var(--green); font-weight: 700; }
     .sample { background: #edf1e7; border-radius: 8px; padding: 12px; margin-top: 9px; }
@@ -93,6 +91,16 @@
     .run-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
     .output { height: 155px; overflow: auto; padding: 13px; background: #f0f2eb; border-radius: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .73rem; line-height: 1.8; margin-top: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
     .program-status { font-size: .75rem; color: var(--muted); margin-top: 10px; }
+    .bookmark-board { padding: 15px 0 20px; }
+    .bookmark-board h3 { font-size: .85rem; }
+    .bookmark-slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; list-style: none; padding: 0; margin: 9px 0 0; }
+    .bookmark-slots li { min-width: 0; padding: 7px 2px; text-align: center; color: var(--muted); background: #f1f3ec; border-radius: 7px; font-size: .72rem; }
+    .bookmark-slots li[data-filled] { background: #f5cf75; color: #4b3813; }
+    .bookmark-slots strong { display: block; font-size: 1.25rem; }
+    dialog { color: var(--ink); background: #fffdf8; border: 1px solid var(--line); border-radius: 16px; width: min(420px, calc(100% - 32px)); padding: 24px; }
+    dialog::backdrop { background: #1b302b99; }
+    .bookmark-card { margin: 15px 0; padding: 15px; border-left: 4px solid var(--yellow); background: #f5f0de; border-radius: 5px; }
+    .bookmark-card p + p { margin-top: 4px; }
     .completion { margin-top: 22px; padding: 26px; background: #eaf0df; border: 1px solid #cbd7bc; border-radius: 16px; }
     .completion h2 { font-size: 1.4rem; margin-bottom: 10px; }
     .completion p { font-size: .88rem; }
@@ -114,66 +122,82 @@
   </header>
   <main>
     <nav class="steps" aria-label="クエストの進み具合">
-      <span id="step1" class="step active" aria-current="step">01　8冊から探す</span><span class="step-divider" aria-hidden="true"></span><span id="step2" class="step">02　1万冊から探す</span>
+      <span id="step1" class="step active" aria-current="step">返却台の8冊</span><span class="step-divider" aria-hidden="true"></span><span id="step2" class="step">書庫の1万冊</span>
     </nav>
     <section class="hero" aria-labelledby="title">
-      <div><p class="eyebrow" id="eyebrow">MISSION 01 / SMALL LIBRARY</p><h1 id="title" tabindex="-1">8冊の中から、見つけよう。</h1><p class="intro" id="intro">たのまれた本は、どこにあるかな？ 1冊ずつ開いて確かめよう。</p></div>
-      <div class="guide"><img src="https://i.postimg.cc/fLXxG8jV/fu-kkurin01.png" alt="案内役のふっくりん" onerror="this.hidden=true"><p id="guide-text">カバーで題名が見えないよ。<br>本を開くと、中を調べられるよ！</p></div>
+      <div><h1 id="title" tabindex="-1">次の読者へのしおり</h1><p class="intro" id="intro"></p></div>
+      <div class="guide"><img src="https://i.postimg.cc/fLXxG8jV/fu-kkurin01.png" alt="案内役のふっくりん" onerror="this.hidden=true"><p id="guide-text"></p></div>
     </section>
     <div id="layout" class="layout">
       <section class="panel" aria-label="本探しゲーム">
-        <div class="request"><div class="target-cover" aria-hidden="true">✦</div><div><p class="request-label">さがしている本</p><h2>『星をわたる図書館』</h2><p class="request-note">カバーを開いて、題名が同じ本を見つけよう。</p></div></div>
+        <div class="request"><div class="target-cover" aria-hidden="true">☾</div><div><p class="request-label" id="mission-label"></p><h2 id="mission-title"></h2><p class="request-note" id="mission-note"></p></div></div>
         <div class="shelf-body">
           <div class="shelf-heading"><h2 id="shelf-title">小さな本棚 / 全8冊</h2><p class="count">調べた本 <strong id="checked-count">0</strong> / <span id="total-count">8</span>冊</p></div>
-          <div id="program-invite" class="program-invite" hidden><p class="tip">1万冊を手で調べるのは大変そう…</p><button id="open-program" class="primary" type="button">プログラムで探してみよう →</button></div>
+          <div id="program-invite" class="program-invite" hidden><p class="tip">巻末のしおりは、蔵書検索に載っていない。<br>ふっくりんに、見分け方を教えよう。</p><button id="open-program" class="primary" type="button">プログラムを書く →</button></div>
+          <section id="bookmark-board" class="bookmark-board" aria-labelledby="board-title" hidden>
+            <h3 id="board-title">集めたしおり <span id="bookmark-count">0</span> / 5枚</h3>
+            <ol id="bookmark-slots" class="bookmark-slots" aria-label="しおりに書かれた番号順"></ol>
+          </section>
+          <p id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+          <div class="actions"><p class="tip" id="tip"></p><button id="next-stage" class="primary" type="button" hidden>1万冊の書庫へ →</button></div>
           <div id="pagination" class="pagination" hidden><button id="prev" type="button" aria-label="前の棚へ">← 前の棚</button><label><span class="small">表示する棚 </span><select id="shelf-select" aria-label="表示する棚"></select></label><button id="next" type="button" aria-label="次の棚へ">次の棚 →</button></div>
           <div id="books" class="books" aria-label="8冊の本"></div>
           <div class="progress-track" role="progressbar" aria-label="調べた本の割合" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0" id="progress"><div id="progress-fill" class="progress-fill"></div></div>
-          <p id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true">本を選ぶと、ここに題名が出るよ。</p>
-          <div class="actions"><p class="tip" id="tip">同じ本をもう一度調べる必要はないよ。</p><button id="next-stage" class="primary" type="button" hidden>1万冊の図書館へ →</button></div>
         </div>
       </section>
       <section id="program" class="panel program" aria-labelledby="program-title" hidden>
-        <p class="eyebrow">LET'S PROGRAM</p><h2 id="program-title" tabindex="-1">「くり返し」で、本探し。</h2>
-        <p class="description">人が1冊ずつ調べる作業を、コンピューターにお願いしよう。<code>books</code> には、この図書館の1万冊が入っているよ。</p>
-        <div class="lesson-steps"><span>① コード例を見る</span><span>② エディターに入れる</span><span>③ 実行する</span></div>
-        <details id="hint"><summary>ヒント：くり返しのコードを見る</summary><div class="sample"><pre id="sample-code"></pre><div class="sample-actions"><button id="copy-code" class="secondary" type="button">コピー</button><button id="insert-code" class="secondary" type="button">このコードを入れる</button></div><p class="tip">1冊ずつ調べ、見つかったら break でくり返しを止めるよ。</p></div></details>
-        <label for="editor" class="editor-label">本探しのプログラム / JavaScript</label>
+        <h2 id="program-title" tabindex="-1">ふっくりんに見分け方を教える</h2>
+        <p class="description">まず、月の印だけで選ぶコードを実行してみよう。選ばれたしおりに違う宛名が混ざったら、返却台で確かめた条件を足そう。</p>
+        <details id="hint"><summary>ヒントを見る</summary><div class="sample"><pre id="sample-code"></pre><div class="sample-actions"><button id="copy-code" class="secondary" type="button">コピー</button><button id="insert-code" class="secondary" type="button">このコードを入れる</button></div><p class="tip"><code>&amp;&amp;</code> で条件をつなぐと、両方に当てはまるか確かめられるよ。</p></div></details>
+        <label for="editor" class="editor-label">しおりを選ぶプログラム（JavaScript）</label>
         <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="editor-help"></textarea>
-        <p id="editor-help" class="tip">checkBook(book) は1冊の本を開いて、探している本か確かめる命令だよ。</p>
+        <p id="editor-help" class="tip"><code>readBookmark(book)</code> で巻末のしおりを読み、<code>collect(bookmark)</code> でしおりを集めるよ。</p>
         <div class="run-actions"><button id="run" class="primary" type="button">▶ 実行する</button><button id="stop" class="secondary" type="button" disabled>停止する</button><button id="reset-code" class="secondary" type="button">コードをもとに戻す</button></div>
         <p id="program-status" class="program-status" role="status">準備ができたら、実行してみよう。</p>
-        <div id="output" class="output" role="region" aria-label="プログラムの実行ログ" tabindex="0">ここに、本を調べる様子が表示されるよ。</div>
+        <div id="output" class="output" role="region" aria-label="プログラムの実行ログ" tabindex="0">ここに、調べた冊数と選んだしおりが表示されるよ。</div>
       </section>
     </div>
-    <section id="completion" class="completion" aria-labelledby="completion-title" hidden><p class="eyebrow">QUEST COMPLETE</p><h2 id="completion-title" tabindex="-1">1万冊から、見つけた！</h2><p id="reflection"></p><p style="margin-top:8px">「同じことをくり返す」プログラムは、たくさんのデータから目的のものを探すときにも役立つよ。</p><p class="keyword">スタンプラリーのキーワード：グローバル</p><p style="margin-top:12px">次のクエストに向かおう！</p></section>
+    <dialog id="book-dialog" aria-labelledby="book-dialog-title">
+      <p class="small">本の巻末</p>
+      <h2 id="book-dialog-title"></h2>
+      <div id="bookmark-card" class="bookmark-card"></div>
+      <p id="bookmark-message" class="tip" role="status"></p>
+      <div class="actions"><button id="close-book" class="secondary" type="button" autofocus>本を閉じる</button><button id="take-bookmark" class="primary" type="button">このしおりを選ぶ</button></div>
+    </dialog>
+    <section id="completion" class="completion" aria-labelledby="completion-title" hidden>
+      <h2 id="completion-title" tabindex="-1">次の読者へ、合言葉が届いた。</h2>
+      <p id="reflection"></p>
+      <p class="keyword" id="keyword"></p>
+      <p style="margin-top:12px">スタンプラリーの台紙に合言葉を書いて、次のクエストへ。</p>
+    </section>
     <footer>LIBRARY QUEST · 本の題名と蔵書は、このゲームのための架空のものです。</footer>
   </main>
   <script>
     (() => {
       'use strict';
       const $ = (id) => document.getElementById(id);
-      const TARGET_TITLE = '星をわたる図書館';
+      const MARK = '月';
+      const RECIPIENT = '次の読者へ';
+      const FRAGMENTS = ['グ', 'ロ', 'ー', 'バ', 'ル'];
       const COLORS = ['#47776c', '#af684e', '#677d9b', '#a28147', '#766786', '#68845c', '#ae7566', '#477f8c'];
       const SMALL_TITLES = ['雨の日の冒険', '月あかりの地図', '森の郵便屋さん', '雲の上の教室', '海辺のひみつ', '風と旅するノート', '小さな発明家', '虹のむこうの町'];
-      const SAMPLE = `// 1万冊の本を、順番に調べる
-for (const book of books) {
-  log("調べている本：No. " + book.id);
-  if (checkBook(book)) {
-    log("見つけた！「" + book.title + "」");
-    break; // 見つかったら、くり返しを止める
+      const STARTER = `for (const book of books) {
+  const bookmark = readBookmark(book);
+  // 月の印だけで選んでいる。宛名も条件に足そう。
+  if (bookmark && bookmark.mark === "月") {
+    collect(bookmark);
   }
 }`;
-      const STARTER = `// まずは、先頭の1冊を調べるプログラム
-// ヒントのコードに変えると、順番に調べられるよ。
-const book = books[0];
-log("調べている本：No. " + book.id);
-if (checkBook(book)) {
-  log("見つけた！「" + book.title + "」");
-}`;
-      let stage, books, targetId, checked, found, shelf, firstCount;
+      const SAMPLE = STARTER.replace(
+        '// 月の印だけで選んでいる。宛名も条件に足そう。',
+        '// 印と宛名の両方が合うしおりを集める。'
+      ).replace(
+        'if (bookmark && bookmark.mark === "月") {',
+        'if (bookmark &&\n      bookmark.mark === "月" &&\n      bookmark.to === "次の読者へ") {'
+      );
+      let stage, books, checked, collected, found, shelf, activeBook;
       let worker = null, workerUrl = null, timeout = null, frame = null, running = false;
-      let runVersion = 0, scan = null;
+      let runVersion = 0;
       const format = (n) => n.toLocaleString('ja-JP');
       const random = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
       const motion = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -181,7 +205,33 @@ if (checkBook(book)) {
       function makeBooks(total) {
         const places = ['森', '海', '空', '月', '虹', '風', '雲', '花', '雨', '光'];
         const things = ['冒険', '手紙', '地図', '旅', '物語', '日記', '教室', '約束', '散歩', '発明'];
-        return Array.from({ length: total }, (_, index) => ({ id: index + 1, title: total === 8 ? SMALL_TITLES[index] : `${places[Math.floor(index / 100) % 10]}の${things[Math.floor(index / 10) % 10]} 第${index + 1}巻` }));
+        const decoys = [
+          { mark: MARK, to: '図書委員へ' },
+          { mark: '星', to: RECIPIENT },
+          { mark: '花', to: 'おはなし会のみんなへ' }
+        ];
+        const records = Array.from({ length: total }, (_, index) => {
+          const id = index + 1;
+          const title = total === 8
+            ? SMALL_TITLES[index]
+            : `${places[Math.floor(index / 100) % 10]}の${things[Math.floor(index / 10) % 10]} 第${id}巻`;
+          const decoy = total === 8 ? index : (index % 19 === 0 ? Math.floor(index / 19) % decoys.length : -1);
+          return { id, title, bookmark: decoys[decoy] ?? null };
+        });
+        if (total === 8) {
+          records[random(3, 7)].bookmark = { mark: MARK, to: RECIPIENT };
+        } else {
+          // 各区画に1枚ずつ置き、巻末の番号は本棚の並びと入れ替える。
+          [3, 1, 5, 2, 4].forEach((number, index) => {
+            const position = index * 2000 + random(200, 1999);
+            records[position].bookmark = { mark: MARK, to: RECIPIENT, number, text: FRAGMENTS[number - 1] };
+          });
+        }
+        return records;
+      }
+
+      function isRelayBookmark(bookmark) {
+        return bookmark?.mark === MARK && bookmark.to === RECIPIENT;
       }
 
       function releaseWorker() {
@@ -194,7 +244,7 @@ if (checkBook(book)) {
       function stopRun(message) {
         runVersion++;
         releaseWorker();
-        cancelAnimationFrame(frame); frame = null; scan = null; running = false;
+        cancelAnimationFrame(frame); frame = null; running = false;
         updateControls();
         if (message) $('program-status').textContent = message;
       }
@@ -202,34 +252,39 @@ if (checkBook(book)) {
       function startStage(nextStage) {
         stopRun();
         stage = nextStage; books = makeBooks(stage === 1 ? 8 : 10000);
-        // 正解の場所を毎回変え、順番に探す体験にする。
-        targetId = stage === 1 ? random(3, 8) : random(5000, 9500);
-        books[targetId - 1].title = TARGET_TITLE;
-        checked = new Set(); found = false; shelf = 0;
-        if (stage === 1) firstCount = 0;
+        checked = new Set(); collected = new Map(); found = false; shelf = 0; activeBook = null;
+        $('book-dialog').close();
         $('step1').className = 'step ' + (stage === 1 ? 'active' : 'done');
         $('step2').className = 'step' + (stage === 2 ? ' active' : '');
         $('step1').toggleAttribute('aria-current', stage === 1);
         $('step2').toggleAttribute('aria-current', stage === 2);
         (stage === 1 ? $('step1') : $('step2')).setAttribute('aria-current', 'step');
-        $('eyebrow').textContent = stage === 1 ? 'MISSION 01 / SMALL LIBRARY' : 'MISSION 02 / BIG LIBRARY';
-        $('title').textContent = stage === 1 ? '8冊の中から、見つけよう。' : '今度は、1万冊の中から。';
-        $('intro').textContent = stage === 1 ? 'たのまれた本は、どこにあるかな？ 1冊ずつ開いて確かめよう。' : '本がぐんと増えたね。全部を1冊ずつ調べると、どうなるだろう？';
-        $('guide-text').textContent = stage === 1 ? 'カバーで題名が見えないよ。本を開くと、中を調べられるよ！' : '人の手だけだと大変！ プログラムにも手伝ってもらおう。';
-        $('shelf-title').textContent = stage === 1 ? '小さな本棚 / 全8冊' : '大きな図書館 / 全10,000冊';
+        $('title').textContent = stage === 1 ? '次の読者へのしおり' : '書庫に散らばった5枚を集めよう';
+        $('intro').textContent = stage === 1
+          ? '読書週間の最終日。先輩たちが次の読者へ、合言葉を5枚のしおりに分けて残した。返却台の8冊には、しおりの見本が1枚だけ入っている。'
+          : '見本と同じ印と宛名のしおりが、1万冊の書庫に5枚。しおりに書かれた番号の順に文字を並べると、先輩たちの合言葉になる。';
+        $('guide-text').textContent = stage === 1 ? '古いしおりも混ざっているよ。印と宛名をよく見てね。' : '見本で覚えた見分け方なら、プログラムにも教えられるよ。';
+        $('mission-label').textContent = stage === 1 ? '返却台に残されたメモ' : '見本のしおりで確かめた条件';
+        $('mission-title').textContent = '月の印 ＋「次の読者へ」';
+        $('mission-note').textContent = stage === 1
+          ? '本を開いて巻末を見よう。月の印があり、宛名が「次の読者へ」なら、それが見本。'
+          : 'この2つがそろったしおりを集めよう。';
+        $('shelf-title').textContent = stage === 1 ? '返却台の本（8冊）' : '書庫の本（10,000冊）';
         $('total-count').textContent = format(books.length);
         $('pagination').hidden = stage === 1;
         $('books').className = 'books' + (stage === 2 ? ' large' : '');
         $('books').setAttribute('aria-label', stage === 1 ? '8冊の本' : '1万冊のうち、選んだ棚の100冊');
-        $('next-stage').hidden = true; $('open-program').hidden = stage === 1;
+        $('next-stage').hidden = true;
+        $('bookmark-board').hidden = stage === 1;
+        renderBookmarks();
         $('program-invite').hidden = stage === 1;
         $('program').hidden = true; $('completion').hidden = true;
         $('layout').classList.remove('with-program');
-        $('tip').textContent = stage === 1 ? '同じ本をもう一度調べる必要はないよ。' : '100冊ずつ、100の棚に分かれているよ。';
+        $('tip').textContent = stage === 1 ? '' : '100の棚に、100冊ずつ並んでいる。';
         $('feedback').className = 'feedback';
-        $('feedback').textContent = stage === 1 ? '本を選ぶと、ここに題名が出るよ。' : '手で探してもOK。大変だと思ったら、プログラムを使ってみよう。';
+        $('feedback').textContent = stage === 1 ? '本を選ぶと、巻末のしおりを見られるよ。' : '本を1冊ずつ開くか、プログラムでまとめて巻末を調べよう。';
         $('editor').value = STARTER; $('hint').open = false;
-        $('output').textContent = 'ここに、本を調べる様子が表示されるよ。';
+        $('output').textContent = 'ここに、調べた冊数と選んだしおりが表示されるよ。';
         $('program-status').textContent = '準備ができたら、実行してみよう。';
         $('shelf-select').replaceChildren();
         if (stage === 2) {
@@ -244,13 +299,31 @@ if (checkBook(book)) {
       }
 
       function paintBook(button, book) {
-        const opened = checked.has(book.id), isFound = opened && book.id === targetId;
-        button.className = 'book' + (isFound ? ' found' : opened ? ' checked' : '');
-        button.disabled = opened || found || running;
-        button.setAttribute('aria-label', `${format(book.id)}冊目${opened ? '：' + book.title + (isFound ? '、見つけた本' : '、調べた本') : 'の本を開く'}`);
-        button.title = opened ? book.title : '開いて題名を確かめる';
-        button.querySelector('.book-mark').textContent = isFound ? '★' : opened ? '✓' : '✦';
-        button.querySelector('.book-title').textContent = opened ? book.title : 'どんな本？';
+        const opened = checked.has(book.id);
+        const saved = collected.has(book.id);
+        button.className = 'book' + (saved ? ' found' : opened ? ' checked' : '');
+        button.disabled = running;
+        button.setAttribute('aria-label', `『${book.title}』の巻末を開く${saved ? '、しおりを回収済み' : opened ? '、確認済み' : ''}`);
+        button.title = book.title;
+        button.querySelector('.book-mark').textContent = saved ? '★' : opened ? '✓' : '✦';
+        button.querySelector('.book-title').textContent = book.title;
+      }
+
+      function renderBookmarks() {
+        const byNumber = new Map([...collected.values()].map((bookmark) => [bookmark.number, bookmark.text]));
+        const slots = FRAGMENTS.map((_, index) => {
+          const number = index + 1;
+          const slot = document.createElement('li');
+          const text = byNumber.get(number);
+          slot.append(`${number}枚目`);
+          const character = document.createElement('strong');
+          character.textContent = text ?? '―';
+          slot.toggleAttribute('data-filled', text !== undefined);
+          slot.append(character);
+          return slot;
+        });
+        $('bookmark-slots').replaceChildren(...slots);
+        $('bookmark-count').textContent = byNumber.size;
       }
 
       function renderBooks() {
@@ -303,28 +376,71 @@ if (checkBook(book)) {
         if (found) return;
         found = true;
         $('feedback').className = 'feedback success';
-        $('feedback').textContent = `見つけた！ No. ${format(targetId)} は『${TARGET_TITLE}』。${format(checked.size)}冊を調べたよ！`;
         if (stage === 1) {
-          firstCount = checked.size; $('next-stage').hidden = false;
-          $('tip').textContent = '8冊なら、手で探して見つけられたね。';
-          $('next-stage').focus({ preventScroll: true });
+          $('feedback').textContent = '見本の裏に「書庫にも、この印と宛名のしおりを5枚残したよ」と書いてある。';
+          $('next-stage').hidden = false;
+          $('next-stage').focus();
         } else {
-          $('program-invite').hidden = true; $('completion').hidden = false;
-          $('reflection').textContent = `最初の8冊では${firstCount}冊、今度の1万冊では${format(checked.size)}冊を${method === 'program' ? 'プログラムで' : '自分の手で'}調べて、目的の本にたどり着いたね。`;
+          const word = [...collected.values()]
+            .sort((a, b) => a.number - b.number)
+            .map((bookmark) => bookmark.text).join('');
+          $('feedback').textContent = '5枚そろった！ しおりの番号順に文字を並べたよ。';
+          $('program-invite').hidden = true;
+          $('completion').hidden = false;
+          $('reflection').textContent = method === 'program'
+            ? '返却台で身につけた見分け方を、プログラムの条件にした。書庫で集めた5枚を番号順に読むと、先輩たちからの合言葉が現れた。'
+            : '返却台で身につけた見分け方で、書庫のしおりを5枚集めた。番号順に読むと、先輩たちからの合言葉が現れた。';
+          $('keyword').textContent = word;
           $('completion-title').focus({ preventScroll: true });
           $('completion').scrollIntoView({ behavior: motion() ? 'smooth' : 'instant', block: 'nearest' });
         }
-        updateControls(); celebrate();
+        updateControls();
+        celebrate();
       }
 
       $('books').addEventListener('click', (event) => {
         const button = event.target.closest('button[data-id]');
-        if (!button || found || running) return;
+        if (!button || running) return;
         const id = Number(button.dataset.id);
-        if (checked.has(id)) return;
-        checked.add(id); updateProgress(); paintBook(button, books[id - 1]);
-        if (id === targetId) complete('manual');
-        else $('feedback').textContent = `No. ${format(id)} は『${books[id - 1].title}』だったよ。次の本も調べてみよう。`;
+        const book = books[id - 1];
+        activeBook = book;
+        checked.add(id);
+        updateProgress();
+        paintBook(button, book);
+        $('book-dialog-title').textContent = `『${book.title}』`;
+        const bookmark = book.bookmark;
+        const lines = bookmark ? [`印　${bookmark.mark}`, `宛名　${bookmark.to}`] : ['巻末にしおりは入っていない。'];
+        if (bookmark?.number) lines.push(`しおりの番号　${bookmark.number}`, `書かれた文字　${bookmark.text}`);
+        if (collected.has(id) && stage === 1) lines.push('裏書き　書庫にも、この印と宛名のしおりを5枚残したよ。');
+        $('bookmark-card').replaceChildren(...lines.map((line) => {
+          const paragraph = document.createElement('p');
+          paragraph.textContent = line;
+          return paragraph;
+        }));
+        $('bookmark-message').textContent = collected.has(id) ? '選んだしおり' : '';
+        $('take-bookmark').hidden = !bookmark || collected.has(id) || found;
+        $('book-dialog').showModal();
+      });
+      $('close-book').addEventListener('click', () => $('book-dialog').close());
+      $('take-bookmark').addEventListener('click', () => {
+        if (!activeBook || found || running) return;
+        const { id, bookmark } = activeBook;
+        if (!isRelayBookmark(bookmark)) {
+          $('bookmark-message').textContent = bookmark.mark !== MARK
+            ? 'このしおりは月の印ではないね。'
+            : '月の印は合っているけれど、宛名が違うね。';
+          return;
+        }
+        collected.set(id, bookmark);
+        $('book-dialog').close();
+        updateControls();
+        if (stage === 1) {
+          complete('manual');
+        } else {
+          renderBookmarks();
+          $('feedback').textContent = `${bookmark.number}枚目のしおりを見つけた！ ${collected.size} / 5枚`;
+          if (collected.size === FRAGMENTS.length) complete('manual');
+        }
       });
       $('restart').addEventListener('click', () => { startStage(1); $('title').focus(); window.scrollTo({ top: 0 }); });
       $('next-stage').addEventListener('click', () => { startStage(2); $('title').focus(); window.scrollTo({ top: 0 }); });
@@ -332,36 +448,47 @@ if (checkBook(book)) {
       $('next').addEventListener('click', () => { if (!running && shelf < 99) { shelf++; renderBooks(); } });
       $('shelf-select').addEventListener('change', (event) => { if (!running) { shelf = Number(event.target.value); renderBooks(); } });
       $('open-program').addEventListener('click', () => {
-        $('program').hidden = false; $('layout').classList.add('with-program'); $('open-program').hidden = true;
+        $('program').hidden = false; $('layout').classList.add('with-program');
         $('program-invite').hidden = true;
         $('program-title').focus({ preventScroll: true });
         $('program').scrollIntoView({ behavior: motion() ? 'smooth' : 'instant', block: 'start' });
       });
       $('sample-code').textContent = SAMPLE;
-      $('insert-code').addEventListener('click', () => { $('editor').value = SAMPLE; $('editor').focus(); $('program-status').textContent = 'くり返しのコードが入ったよ。実行してみよう！'; });
+      $('insert-code').addEventListener('click', () => { $('editor').value = SAMPLE; $('editor').focus(); $('program-status').textContent = '印と宛名を確かめるコードが入ったよ。'; });
       $('copy-code').addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(SAMPLE); $('program-status').textContent = 'コピーしたよ。エディターに貼り付けよう！'; }
         catch { $('program-status').textContent = 'コピーできなかったよ。「このコードを入れる」ボタンを使ってね。'; }
       });
-      $('reset-code').addEventListener('click', () => { $('editor').value = STARTER; $('program-status').textContent = '先頭の1冊を調べるコードに戻したよ。'; });
+      $('reset-code').addEventListener('click', () => { $('editor').value = STARTER; $('program-status').textContent = '月の印だけで選ぶコードに戻したよ。'; });
 
       // 編集したコードはWorkerで実行し、停止・時間制限が効くようにする。
       function runInWorker(data) {
-        const records = data.books;
-        const checks = [], logs = [];
-        const validIds = new Set(records.map((book) => book.id));
-        function checkBook(book) {
-          if (!book || !validIds.has(book.id)) throw new Error('books の中の本を checkBook(book) で調べよう。');
-          if (checks.length >= 20000) throw new Error('同じ本を何度も調べているかも。くり返しの条件を見直してね。');
-          checks.push(book.id);
-          const ok = book.id === data.targetId;
-          return ok;
+        const checkedIds = new Set();
+        const selectedIds = new Set();
+        const sources = new WeakMap();
+        const logs = [];
+        const books = data.books.map(({ id, title }) => Object.freeze({ id, title }));
+        function readBookmark(book) {
+          if (!book || books[book.id - 1] !== book) throw new Error('books の中の本を readBookmark(book) で開こう。');
+          checkedIds.add(book.id);
+          const original = data.books[book.id - 1].bookmark;
+          if (!original) return null;
+          const bookmark = Object.freeze({ ...original });
+          sources.set(bookmark, book.id);
+          return bookmark;
         }
-        function log(message) { if (logs.length < 120) logs.push(String(message).slice(0, 500)); }
+        function collect(bookmark) {
+          if (!sources.has(bookmark)) throw new Error('readBookmark(book) で読んだしおりを collect(bookmark) に渡そう。');
+          selectedIds.add(sources.get(bookmark));
+        }
+        function log(message) { if (logs.length < 60) logs.push(String(message).slice(0, 300)); }
         let error = '';
-        try { new Function('books', 'checkBook', 'log', '"use strict";\n' + data.code)(records, checkBook, log); }
-        catch (e) { error = String(e.message || e); }
-        self.postMessage({ checks, logs, error });
+        try {
+          new Function('books', 'readBookmark', 'collect', 'log', '"use strict";\n' + data.code)(books, readBookmark, collect, log);
+        } catch (e) {
+          error = String(e?.message ?? e).slice(0, 300);
+        }
+        self.postMessage({ checks: [...checkedIds], selected: [...selectedIds], logs, error });
       }
 
       function addLog(message) {
@@ -370,37 +497,52 @@ if (checkBook(book)) {
         $('output').scrollTop = $('output').scrollHeight;
       }
 
+      function processSelection(result) {
+        result.logs.forEach(addLog);
+        if (result.error) {
+          addLog('エラー　' + result.error);
+          return 'コードを直して、もう一度実行しよう。';
+        }
+        const selected = result.selected.map((id) => books[id - 1]);
+        const other = selected.filter((book) => !isRelayBookmark(book.bookmark));
+        addLog(`巻末を調べた本：${format(result.checks.length)}冊 / 選んだしおり：${format(selected.length)}枚`);
+        if (other.length) {
+          const { title, bookmark } = other[0];
+          addLog(`別のしおりの例：『${title}』　${bookmark.mark}の印 ／ 宛名「${bookmark.to}」`);
+          addLog(`別のしおりが${format(other.length)}枚混ざっている。印と宛名の両方を条件にしよう。`);
+          return 'ほかのしおりが混ざっていたよ。条件を直してから、もう一度実行しよう。';
+        }
+        selected.forEach(({ id, title, bookmark }) => {
+          collected.set(id, bookmark);
+          addLog(`${bookmark.number}枚目：『${title}』 → ${bookmark.text}`);
+        });
+        renderBookmarks();
+        if (collected.size === FRAGMENTS.length) {
+          complete('program');
+          return '5枚そろったよ。';
+        }
+        return `しおりは ${collected.size} / 5枚。調べる範囲と条件を見直してみよう。`;
+      }
+
       function animateResult(result, version) {
-        scan = { index: 0, result };
+        let index = 0;
         function tick() {
           if (!running || version !== runVersion) return;
-          let lastId = null, matchedThisFrame = false;
-          for (let i = 0; i < 70 && scan.index < result.checks.length; i++) {
-            lastId = result.checks[scan.index++]; checked.add(lastId);
-            if (lastId === targetId) { matchedThisFrame = true; break; }
+          let lastId;
+          for (let i = 0; i < 100 && index < result.checks.length; i++) {
+            lastId = result.checks[index++];
+            checked.add(lastId);
           }
-          if (lastId !== null) {
+          if (lastId !== undefined) {
             const nextShelf = Math.floor((lastId - 1) / 100);
             if (nextShelf !== shelf) { shelf = nextShelf; renderBooks(); }
             else updateControls();
             updateProgress();
-            addLog(`No. ${format(lastId)}『${books[lastId - 1].title}』を確認 / ${format(scan.index)}回調べた`);
-            $('program-status').textContent = `${format(scan.index)}回調べたよ。1冊ずつ、順番に確認中…`;
+            $('program-status').textContent = `${format(index)}冊の巻末を確認…`;
           }
-          if (matchedThisFrame || scan.index >= result.checks.length) {
-            const attempts = scan.index;
-            result.logs.forEach(addLog);
-            if (result.logs.length === 120) addLog('（コードからのログは、先頭の120行まで表示しているよ。）');
-            if (result.error) addLog('エラー：' + result.error);
+          if (index === result.checks.length) {
             stopRun();
-            if (matchedThisFrame) {
-              addLog(`★ 見つけた！ No. ${format(targetId)}『${TARGET_TITLE}』`);
-              $('program-status').textContent = `${format(attempts)}回調べて、目的の本を見つけたよ！`;
-              complete('program');
-            } else {
-              $('program-status').textContent = result.error ? 'コードを直して、もう一度実行してみよう。' : 'まだ見つからなかったね。ヒントの「くり返し」を使ってみよう。';
-              if (!result.checks.length && !result.error) addLog('本はまだ調べていないよ。checkBook(book) を使ってみよう。');
-            }
+            $('program-status').textContent = processSelection(result);
             return;
           }
           frame = requestAnimationFrame(tick);
@@ -420,14 +562,16 @@ if (checkBook(book)) {
             if (version !== runVersion) return;
             releaseWorker();
             const result = event.data;
-            if (!Array.isArray(result.checks) || !Array.isArray(result.logs) || result.checks.some((id) => !Number.isInteger(id) || id < 1 || id > books.length)) {
+            const validId = (id) => Number.isInteger(id) && id >= 1 && id <= books.length;
+            if (!result || !Array.isArray(result.checks) || !Array.isArray(result.selected) || !Array.isArray(result.logs)
+                || !result.checks.every(validId) || !result.selected.every((id) => validId(id) && books[id - 1].bookmark)) {
               stopRun('実行結果を読み取れなかったよ。コードをもとに戻して試してね。'); return;
             }
             animateResult(result, version);
           };
           worker.onerror = (event) => { event.preventDefault(); if (version === runVersion) { addLog('実行エラー。コードをもとに戻して試してね。'); stopRun('プログラムを実行できなかったよ。'); } };
           timeout = setTimeout(() => { if (version === runVersion) { addLog('時間がかかったので停止したよ。くり返しが終わる条件を確認しよう。'); stopRun('プログラムを停止したよ。コードを直して試してね。'); } }, 3000);
-          worker.postMessage({ books, targetId, code: $('editor').value });
+          worker.postMessage({ books, code: $('editor').value });
         } catch (error) { addLog('実行エラー：' + error.message); stopRun('プログラムを実行できなかったよ。'); }
       });
       $('stop').addEventListener('click', () => stopRun('停止したよ。調べた本は、そのまま残っているよ。'));
