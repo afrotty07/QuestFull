@@ -1,768 +1,439 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8" />
-    <title>パスワードゲーム & プログラミング</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- 紙吹雪エフェクト用のライブラリ -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        /* --- 共通・レイアウト設定 --- */
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden; /* 全体のスクロールを禁止 */
-        }
-
-        .split-container {
-            display: flex;
-            height: 100%;
-            width: 100%;
-        }
-
-        /* --- 左側のパネル（ゲーム画面） --- */
-        #left-panel {
-            flex: 1;
-            /* 初期状態は全幅 */
-            background-color: #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow-y: auto; /* 必要に応じてスクロール */
-            transition: all 0.5s ease; /* サイズ変更などをアニメーション */
-            border-right: 2px solid #ccc;
-            z-index: 10;
-        }
-
-        /* 左パネル専用：正解時の豪華な背景アニメーション */
-        @keyframes rainbow-bg {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        #left-panel.success-mode {
-            background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb, #8fd3f4);
-            background-size: 400% 400%;
-            animation: rainbow-bg 10s ease infinite;
-        }
-
-        /* --- 右側のパネル（プログラミング画面） --- */
-        #right-panel {
-            /* 初期状態：隠す */
-            flex: 0;
-            width: 0;
-            padding: 0;
-            overflow: hidden;
-            opacity: 0;
-            
-            background-color: #f5f5f5;
-            line-height: 1.6;
-            color: #333;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* スムーズな開閉 */
-            border-left: 1px solid transparent;
-        }
-
-        /* 右パネルが開いた時のクラス */
-        #right-panel.open {
-            flex: 1;
-            width: auto;
-            padding: 20px;
-            opacity: 1;
-            border-left: 1px solid #ccc;
-            overflow-y: auto;
-        }
-
-        /* =========================================
-           以下、左側（ゲーム）用のスタイル
-           ========================================= */
-        .card {
-            width: 100%;
-            max-width: 480px;
-            margin: 16px;
-            background-color: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            position: relative;
-            z-index: 10;
-            transition: min-height 0.3s ease;
-        }
-
-        .card-header { text-align: center; }
-        .card-title { font-size: 1.1rem; font-weight: 700; margin: 0 0 4px; }
-        .card-subtitle { font-size: 0.85rem; color: #64748b; margin: 0; min-height: 1.2em; }
-
-        .image-wrapper { display: flex; justify-content: center; }
-        .image-circle { width: 180px; margin: 0 auto; transition: transform 0.3s; }
-        .image-circle img { width: 100%; height: auto; display: block; }
-
-        @keyframes tada {
-            from { transform: scale3d(1, 1, 1); }
-            10%, 20% { transform: scale3d(0.9, 0.9, 0.9) rotate3d(0, 0, 1, -3deg); }
-            30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); }
-            40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); }
-            to { transform: scale3d(1, 1, 1); }
-        }
-        .animate-tada { animation: tada 1s both; }
-
-        .input-area { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .input-label { font-size: 0.7rem; color: #64748b; }
-        .input-display {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 1.6rem; letter-spacing: 0.4em;
-            border: 1px solid #cbd5e1; border-radius: 12px;
-            padding: 8px 16px; min-width: 8rem; text-align: center;
-            background-color: #fff;
-        }
-
-        .reset-button {
-            margin-top: 2px; font-size: 0.7rem; color: #64748b;
-            text-decoration: underline; background: none; border: none; cursor: pointer;
-        }
-        .reset-button:hover { color: #0f172a; }
-
-        .digits-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-        .digit-button {
-            padding: 12px 0; border-radius: 12px; border: 1px solid #cbd5e1;
-            font-size: 1.1rem; font-weight: 600; background-color: #ffffff;
-            cursor: pointer;
-            transition: background-color 0.12s ease, transform 0.06s ease, box-shadow 0.12s ease, opacity 0.12s ease;
-        }
-        .digit-button:hover { background-color: #f1f5f9; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12); }
-        .digit-button:active { transform: scale(0.97); }
-        .digit-button:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
-
-        .message-area {
-            min-height: 3.5rem; display: flex; align-items: center; justify-content: center;
-            text-align: left; font-size: 0.85rem; background-color: #e0f2fe;
-            border-radius: 16px; padding: 12px 16px; position: relative;
-            transition: background-color 0.3s;
-        }
-        .message-area.success-style {
-            background-color: #d1fae5; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-        }
-        .message-area.success-style::before { border-color: transparent transparent #d1fae5 transparent; }
-        .message-idle { color: #64748b; }
-        .message-error { color: #ef4444; font-weight: 500; }
-        .message-success-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; color: #059669; text-align: center; width: 100%; }
-        .message-success-text { color: #334155; margin: 0; }
-        .message-strong { font-weight: 700; color: #0d9488; }
-
-        @keyframes bounceIn {
-            0%, 20%, 40%, 60%, 80%, 100% { animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000); }
-            0% { opacity: 0; transform: scale3d(.3, .3, .3); }
-            20% { transform: scale3d(1.1, 1.1, 1.1); }
-            40% { transform: scale3d(.9, .9, .9); }
-            60% { opacity: 1; transform: scale3d(1.03, 1.03, 1.03); }
-            80% { transform: scale3d(.97, .97, .97); }
-            100% { opacity: 1; transform: scale3d(1, 1, 1); }
-        }
-        .animate-bounce-in { animation: bounceIn 0.8s; }
-
-        .message-area::before {
-            content: ""; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
-            border-width: 0 8px 8px 8px; border-style: solid; border-color: transparent transparent #e0f2fe transparent;
-            transition: border-color 0.3s;
-        }
-        .card-footer { font-size: 0.7rem; color: #94a3b8; text-align: center; }
-
-        /* トリガーボタン（プログラミングモードを開く） */
-        .prog-trigger-wrapper {
-            margin-top: 20px;
-            text-align: center;
-            display: none; /* 初期状態は非表示（JSで制御） */
-            animation: bounceIn 0.5s ease forwards;
-        }
-        .prog-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 12px 24px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .prog-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-        .prog-btn:active {
-            transform: translateY(0);
-        }
-        .prog-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
-        }
-
-
-        /* =========================================
-           以下、右側（プログラミング）用のスタイル
-           ========================================= */
-        #right-panel h1 { font-size: 1.6rem; margin-top: 0;}
-        #right-panel h2 { margin-top: 1.4em; }
-        #right-panel button { margin-top: 8px; padding: 8px 16px; cursor: pointer; }
-
-        .code {
-            width: 100%; min-height: 250px; background: #222; color: #eee;
-            border-radius: 6px; padding: 10px; font-family: "SF Mono", monospace;
-            white-space: pre; overflow: visible; box-sizing: border-box; font-size: 14px;
-        }
-        .editable-line {
-            background: #ffeb3b; color: #000; font-weight: bold; padding: 2px 4px; border-radius: 4px;
-        }
-
-        #output {
-            margin-top: 10px; padding: 10px; background: #1e1e1e; color: #00ff00;
-            border-radius: 6px; height: 300px; overflow-y: auto; white-space: pre-wrap;
-            border: 4px solid #333; box-sizing: border-box;
-            font-family: "SF Mono", monospace; font-size: 13px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .log-line { border-bottom: 1px solid #333; padding: 2px 0; }
-        .log-highlight { color: #fff; font-weight: bold; background: #444; }
-
-        .correct-flash {
-            animation: correctFlash 0.9s ease-out; box-shadow: 0 0 20px 10px gold; border-color: gold !important;
-        }
-        @keyframes correctFlash {
-            0% { background: #fff59d; color: #000; }
-            50% { background: #ffe082; transform: scale(1.02); color: #000; }
-            100% { background: #1e1e1e; transform: scale(1); color: #00ff00; }
-        }
-
-        .incorrect-flash { animation: incorrectFlash 0.4s ease-out; border-color: #ff5252 !important; }
-        @keyframes incorrectFlash {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        /* 粒子エフェクト（右側用） */
-        .particle {
-            position: fixed; width: 6px; height: 6px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9); pointer-events: none;
-            animation: fall 1.2s linear forwards; filter: drop-shadow(0 0 6px #fff); z-index: 9999;
-        }
-        @keyframes fall {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(80px) scale(0.3); }
-        }
-
-        #hint-box {
-            margin-top: 10px; padding: 10px; background: #ffffff;
-            border-radius: 6px; border: 1px solid #dddddd; font-size: 0.95rem;
-        }
-        .hint-text {
-            margin-top: 6px; padding: 6px 8px; background: #f9f9f9;
-            border-radius: 4px; border-left: 3px solid #90caf9; display: none;
-        }
-
-        .copy-btn {
-            padding: 4px 8px; margin-top: 0; font-size: 0.85rem;
-            background-color: #4CAF50; color: white; border: none; border-radius: 4px;
-            transition: background-color 0.2s; flex-shrink: 0;
-        }
-        .copy-btn:hover { background-color: #45a049; }
-
-        .copy-container {
-            display: flex; align-items: center; justify-content: space-between; gap: 10px;
-            background: #eee; padding: 4px; border-radius: 4px; border: 1px solid #ddd;
-        }
-        #codeToCopy { font-family: monospace; font-weight: bold; color: #333; flex-grow: 1; }
-
-        /* レスポンシブ対応：狭い画面では縦並び */
-        @media (max-width: 800px) {
-            .split-container { flex-direction: column; overflow-y: auto; }
-            body { overflow: auto; }
-            #left-panel { min-height: 100vh; border-right: none; border-bottom: 2px solid #ccc; width: 100%; flex: none; }
-            #right-panel { width: 100%; flex: none; }
-            #right-panel.open { min-height: 100vh; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#22594d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2322594d'/%3E%3Cpath d='M32 17v33M10 15c9-2 15 0 22 5 7-5 13-7 22-5v31c-9-2-15 0-22 5-7-5-13-7-22-5Z' fill='none' stroke='%23fffdf7' stroke-width='4'/%3E%3C/svg%3E">
+  <title>ライブラリークエスト｜8冊から、1万冊へ。</title>
+  <style>
+    :root { --ink: #233e37; --green: #22594d; --muted: #64736b; --line: #dce2d8; --cream: #f6f5ee; --yellow: #f4cb68; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; color: var(--ink); background: var(--cream); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.7; }
+    button, textarea, select { font: inherit; }
+    button, select { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .5; }
+    button:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid #b87e1c; outline-offset: 4px; }
+    button { touch-action: manipulation; }
+    h1, h2, h3, p { margin: 0; }
+    .topbar { border-bottom: 1px solid var(--line); background: #fffdf7; }
+    .topbar-inner { max-width: 1320px; margin: auto; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: .06em; }
+    .brand-mark { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 10px; background: var(--green); color: #fff; }
+    .brand-mark svg { width: 23px; height: 23px; }
+    .small { font-size: .78rem; color: var(--muted); }
+    .restart { border: 1px solid var(--line); background: transparent; color: var(--green); border-radius: 8px; padding: 7px 12px; font-size: .8rem; }
+    main { max-width: 1320px; margin: auto; padding: 28px 32px 48px; }
+    .steps { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; font-size: .78rem; font-weight: 700; }
+    .step { padding: 5px 13px; border-radius: 30px; color: var(--muted); border: 1px solid var(--line); }
+    .step.active { background: var(--green); color: white; border-color: var(--green); }
+    .step.done { background: #e0eade; color: var(--green); }
+    .step-divider { width: 28px; height: 1px; background: #c7cec4; }
+    .hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 24px; }
+    .eyebrow { font-size: .7rem; letter-spacing: .16em; font-weight: 800; color: var(--green); margin-bottom: 6px; }
+    h1 { font-size: clamp(1.7rem, 3.1vw, 2.6rem); line-height: 1.4; letter-spacing: .02em; }
+    .intro { color: var(--muted); font-size: .9rem; margin-top: 9px; }
+    .guide { display: flex; align-items: center; gap: 12px; max-width: 295px; flex-shrink: 0; }
+    .guide img { width: 74px; height: 92px; object-fit: contain; }
+    .guide p { font-size: .8rem; background: #e5ecdf; padding: 13px 16px; border-radius: 14px 14px 14px 2px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
+    .layout.with-program { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+    .panel { background: #fffdf8; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+    .request { display: flex; gap: 20px; align-items: center; padding: 23px 28px; background: #eef1e7; border-bottom: 1px solid var(--line); }
+    .target-cover { flex-shrink: 0; width: 56px; height: 76px; border-radius: 3px 7px 7px 3px; background: var(--green); border-left: 6px solid #153d34; display: grid; place-items: center; color: #f3d681; font-size: 1.7rem; box-shadow: 3px 4px 0 #d5ddcd; }
+    .request-label { font-size: .68rem; color: var(--muted); font-weight: 700; letter-spacing: .09em; }
+    .request h2 { font-size: 1.18rem; margin-top: 2px; }
+    .request-note { font-size: .77rem; color: var(--muted); margin-top: 4px; }
+    .shelf-body { padding: 24px 28px; }
+    .shelf-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .shelf-heading h2 { font-size: .93rem; }
+    .program-invite { margin: 0 0 20px; padding: 14px; background: #eef1e7; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .count { font-size: .8rem; color: var(--muted); }
+    .count strong { color: var(--green); font-size: 1.15rem; }
+    .books { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; padding: 14px 0 24px; border-bottom: 8px solid #d2bd97; }
+    .book { --cover: #47776c; min-height: 170px; min-width: 0; border: 0; border-left: 7px solid #0002; border-radius: 3px 8px 8px 3px; background: var(--cover); color: white; padding: 15px 7px 10px; box-shadow: 3px 5px 0 #00000013; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 10px; transition: transform .18s ease; }
+    .book:hover:not(:disabled) { transform: translateY(-6px); }
+    .book:disabled { opacity: 1; }
+    .book-mark { font-size: 1.5rem; line-height: 1.3; }
+    .book-title { font-size: .75rem; line-height: 1.5; overflow-wrap: anywhere; }
+    .book-number { font-size: .65rem; letter-spacing: .03em; border-top: 1px solid #ffffff55; padding-top: 6px; width: 100%; }
+    .book.checked { background: #e5e8df; color: #59675e; box-shadow: none; }
+    .book.found { background: #f5cf75; border-left-color: #d9ab44; color: #4b3813; box-shadow: 0 0 0 3px #d4a338; }
+    .books.large { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 7px; padding-top: 4px; border-bottom-width: 5px; }
+    .books.large .book { min-height: 68px; padding: 7px 2px 5px; border-left-width: 4px; border-radius: 2px 4px 4px 2px; gap: 4px; }
+    .books.large .book-mark { font-size: .86rem; }
+    .books.large .book-title { display: none; }
+    .books.large .book-number { font-size: .56rem; letter-spacing: -.02em; padding-top: 2px; }
+    .pagination { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .pagination button { border: 1px solid var(--line); background: white; border-radius: 7px; color: var(--green); padding: 5px 10px; min-height: 40px; }
+    .pagination select { max-width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--green); padding: 5px; font-size: .78rem; }
+    .pagination label { min-width: 0; }
+    .feedback { margin-top: 20px; padding: 13px 16px; background: #f1f3ec; border-radius: 10px; font-size: .85rem; min-height: 55px; }
+    .feedback.success { background: #e0efdf; color: #245433; font-weight: 700; }
+    .progress-track { height: 5px; background: #e7eade; border-radius: 5px; overflow: hidden; margin-top: 16px; }
+    .progress-fill { height: 100%; background: var(--green); width: 0; transition: width .15s; }
+    .actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 20px; }
+    .primary { border: 0; background: var(--green); color: #fff; border-radius: 9px; padding: 12px 20px; font-weight: 700; font-size: .88rem; }
+    .primary:hover:not(:disabled) { background: #153f35; }
+    .secondary { border: 1px solid var(--line); background: white; border-radius: 8px; padding: 9px 13px; color: var(--green); font-size: .8rem; }
+    .tip { color: var(--muted); font-size: .75rem; }
+    .program { padding: 24px; }
+    .program h2 { font-size: 1.2rem; }
+    .program .description { font-size: .83rem; color: var(--muted); margin: 9px 0 18px; }
+    .lesson-steps { display: flex; flex-wrap: wrap; gap: 8px; font-size: .73rem; margin-bottom: 15px; color: var(--green); }
+    .lesson-steps span { border-radius: 5px; background: #edf1e6; padding: 4px 8px; }
+    details { font-size: .8rem; margin: 15px 0; }
+    summary { cursor: pointer; color: var(--green); font-weight: 700; }
+    .sample { background: #edf1e7; border-radius: 8px; padding: 12px; margin-top: 9px; }
+    pre { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .75rem; line-height: 1.6; }
+    .sample-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .editor-label { display: block; font-size: .76rem; font-weight: 700; margin-bottom: 7px; }
+    textarea { display: block; width: 100%; height: 245px; resize: vertical; border: 1px solid #31554c; border-radius: 9px; background: #1b302b; color: #edf3dc; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .77rem; line-height: 1.8; padding: 15px; tab-size: 2; }
+    .run-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+    .output { height: 155px; overflow: auto; padding: 13px; background: #f0f2eb; border-radius: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .73rem; line-height: 1.8; margin-top: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .program-status { font-size: .75rem; color: var(--muted); margin-top: 10px; }
+    .completion { margin-top: 22px; padding: 26px; background: #eaf0df; border: 1px solid #cbd7bc; border-radius: 16px; }
+    .completion h2 { font-size: 1.4rem; margin-bottom: 10px; }
+    .completion p { font-size: .88rem; }
+    .keyword { display: inline-block; background: var(--green); color: white; padding: 8px 19px; border-radius: 8px; margin-top: 15px; font-weight: 700; letter-spacing: .12em; }
+    footer { text-align: center; color: var(--muted); font-size: .7rem; margin-top: 26px; }
+    .confetti { position: fixed; top: -15px; width: 9px; height: 16px; pointer-events: none; z-index: 99; animation: fall 1.8s ease-in forwards; }
+    @keyframes fall { to { transform: translateY(105vh) rotate(500deg); opacity: .2; } }
+    @media (max-width: 1100px) { .layout.with-program { grid-template-columns: minmax(0, 1fr); } .books { gap: 10px; } .guide { max-width: 245px; } }
+    @media (max-width: 700px) { .topbar-inner { padding: 13px 18px; } main { padding: 22px 16px 32px; } .brand { font-size: .85rem; letter-spacing: 0; } .hero { align-items: flex-start; } .guide { display: none; } .books { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; } .book { min-height: 140px; } .shelf-body { padding: 20px 16px; } .request { padding: 19px 17px; gap: 14px; } .request h2 { font-size: 1.05rem; } .books.large { grid-template-columns: repeat(5, minmax(0, 1fr)); } .books.large .book { min-height: 65px; } .books.large .book-number { font-size: .66rem; } .program { padding: 20px 16px; } .step { padding: 5px 10px; } .steps { gap: 8px; } .step-divider { width: 18px; } .pagination button { padding: 5px 8px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+  </style>
 </head>
-
 <body>
-    <div class="split-container">
-        
-        <!-- =========================================
-             左側のパネル（ゲームUI）
-             ========================================= -->
-        <div id="left-panel">
-            <div class="card">
-                <header class="card-header">
-                    <h1 id="card-title" class="card-title">Loading...</h1>
-                    <p id="card-subtitle" class="card-subtitle">Loading...</p>
-                </header>
-
-                <section class="image-wrapper">
-                    <div id="image-circle-container" class="image-circle">
-                        <img id="status-image" src="https://i.postimg.cc/fLXxG8jV/fu-kkurin01.png" alt="キャラクター画像">
-                    </div>
-                </section>
-
-                <section id="message-area" class="message-area">
-                    <p id="message-text" class="message-idle">...</p>
-                </section>
-
-                <section class="input-area">
-                    <div class="input-label">現在の入力</div>
-                    <div id="input-display" class="input-display">_</div>
-                    <button id="reset-button" type="button" class="reset-button">クリア</button>
-                </section>
-
-                <section id="digits-grid" class="digits-grid"></section>
-                
-                <!-- 新しいボタンを追加 -->
-                <div id="prog-trigger-wrapper" class="prog-trigger-wrapper">
-                    <button id="open-prog-btn" class="prog-btn">
-                        <!-- Code Icon -->
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H9v-2h6v2zm-3-7l-2.5-2.5L12 6l2.5 2.5L12 11zm7 5h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V6h4v2z"/></svg>
-                        <span>プログラミングで<br>4けたの総当たりをする</span>
-                    </button>
-                </div>
-
-                <footer class="card-footer"></footer>
-            </div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v14c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span>ライブラリークエスト</div>
+      <button id="restart" class="restart" type="button">はじめから</button>
+    </div>
+  </header>
+  <main>
+    <nav class="steps" aria-label="クエストの進み具合">
+      <span id="step1" class="step active" aria-current="step">01　8冊から探す</span><span class="step-divider" aria-hidden="true"></span><span id="step2" class="step">02　1万冊から探す</span>
+    </nav>
+    <section class="hero" aria-labelledby="title">
+      <div><p class="eyebrow" id="eyebrow">MISSION 01 / SMALL LIBRARY</p><h1 id="title" tabindex="-1">8冊の中から、見つけよう。</h1><p class="intro" id="intro">たのまれた本は、どこにあるかな？ 1冊ずつ開いて確かめよう。</p></div>
+      <div class="guide"><img src="https://i.postimg.cc/fLXxG8jV/fu-kkurin01.png" alt="案内役のふっくりん" onerror="this.hidden=true"><p id="guide-text">カバーで題名が見えないよ。<br>本を開くと、中を調べられるよ！</p></div>
+    </section>
+    <div id="layout" class="layout">
+      <section class="panel" aria-label="本探しゲーム">
+        <div class="request"><div class="target-cover" aria-hidden="true">✦</div><div><p class="request-label">さがしている本</p><h2>『星をわたる図書館』</h2><p class="request-note">カバーを開いて、題名が同じ本を見つけよう。</p></div></div>
+        <div class="shelf-body">
+          <div class="shelf-heading"><h2 id="shelf-title">小さな本棚 / 全8冊</h2><p class="count">調べた本 <strong id="checked-count">0</strong> / <span id="total-count">8</span>冊</p></div>
+          <div id="program-invite" class="program-invite" hidden><p class="tip">1万冊を手で調べるのは大変そう…</p><button id="open-program" class="primary" type="button">プログラムで探してみよう →</button></div>
+          <div id="pagination" class="pagination" hidden><button id="prev" type="button" aria-label="前の棚へ">← 前の棚</button><label><span class="small">表示する棚 </span><select id="shelf-select" aria-label="表示する棚"></select></label><button id="next" type="button" aria-label="次の棚へ">次の棚 →</button></div>
+          <div id="books" class="books" aria-label="8冊の本"></div>
+          <div class="progress-track" role="progressbar" aria-label="調べた本の割合" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0" id="progress"><div id="progress-fill" class="progress-fill"></div></div>
+          <p id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true">本を選ぶと、ここに題名が出るよ。</p>
+          <div class="actions"><p class="tip" id="tip">同じ本をもう一度調べる必要はないよ。</p><button id="next-stage" class="primary" type="button" hidden>1万冊の図書館へ →</button></div>
         </div>
+      </section>
+      <section id="program" class="panel program" aria-labelledby="program-title" hidden>
+        <p class="eyebrow">LET'S PROGRAM</p><h2 id="program-title" tabindex="-1">「くり返し」で、本探し。</h2>
+        <p class="description">人が1冊ずつ調べる作業を、コンピューターにお願いしよう。<code>books</code> には、この図書館の1万冊が入っているよ。</p>
+        <div class="lesson-steps"><span>① コード例を見る</span><span>② エディターに入れる</span><span>③ 実行する</span></div>
+        <details id="hint"><summary>ヒント：くり返しのコードを見る</summary><div class="sample"><pre id="sample-code"></pre><div class="sample-actions"><button id="copy-code" class="secondary" type="button">コピー</button><button id="insert-code" class="secondary" type="button">このコードを入れる</button></div><p class="tip">1冊ずつ調べ、見つかったら break でくり返しを止めるよ。</p></div></details>
+        <label for="editor" class="editor-label">本探しのプログラム / JavaScript</label>
+        <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="editor-help"></textarea>
+        <p id="editor-help" class="tip">checkBook(book) は1冊の本を開いて、探している本か確かめる命令だよ。</p>
+        <div class="run-actions"><button id="run" class="primary" type="button">▶ 実行する</button><button id="stop" class="secondary" type="button" disabled>停止する</button><button id="reset-code" class="secondary" type="button">コードをもとに戻す</button></div>
+        <p id="program-status" class="program-status" role="status">準備ができたら、実行してみよう。</p>
+        <div id="output" class="output" role="region" aria-label="プログラムの実行ログ" tabindex="0">ここに、本を調べる様子が表示されるよ。</div>
+      </section>
+    </div>
+    <section id="completion" class="completion" aria-labelledby="completion-title" hidden><p class="eyebrow">QUEST COMPLETE</p><h2 id="completion-title" tabindex="-1">1万冊から、見つけた！</h2><p id="reflection"></p><p style="margin-top:8px">「同じことをくり返す」プログラムは、たくさんのデータから目的のものを探すときにも役立つよ。</p><p class="keyword">スタンプラリーのキーワード：グローバル</p><p style="margin-top:12px">次のクエストに向かおう！</p></section>
+    <footer>LIBRARY QUEST · 本の題名と蔵書は、このゲームのための架空のものです。</footer>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+      const TARGET_TITLE = '星をわたる図書館';
+      const COLORS = ['#47776c', '#af684e', '#677d9b', '#a28147', '#766786', '#68845c', '#ae7566', '#477f8c'];
+      const SMALL_TITLES = ['雨の日の冒険', '月あかりの地図', '森の郵便屋さん', '雲の上の教室', '海辺のひみつ', '風と旅するノート', '小さな発明家', '虹のむこうの町'];
+      const SAMPLE = `// 1万冊の本を、順番に調べる
+for (const book of books) {
+  log("調べている本：No. " + book.id);
+  if (checkBook(book)) {
+    log("見つけた！「" + book.title + "」");
+    break; // 見つかったら、くり返しを止める
+  }
+}`;
+      const STARTER = `// まずは、先頭の1冊を調べるプログラム
+// ヒントのコードに変えると、順番に調べられるよ。
+const book = books[0];
+log("調べている本：No. " + book.id);
+if (checkBook(book)) {
+  log("見つけた！「" + book.title + "」");
+}`;
+      let stage, books, targetId, checked, found, shelf, firstCount;
+      let worker = null, workerUrl = null, timeout = null, frame = null, running = false;
+      let runVersion = 0, scan = null;
+      const format = (n) => n.toLocaleString('ja-JP');
+      const random = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
+      const motion = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        <!-- =========================================
-             右側のパネル（プログラミングUI）
-             ========================================= -->
-        <div id="right-panel">
-            <h1>✨ 4けたパスワードをプログラムでさがそう！</h1>
-            <p>今回は、<strong>魔法のコードを貼り付けて総当たり作戦を行おう！</strong></p>
+      function makeBooks(total) {
+        const places = ['森', '海', '空', '月', '虹', '風', '雲', '花', '雨', '光'];
+        const things = ['冒険', '手紙', '地図', '旅', '物語', '日記', '教室', '約束', '散歩', '発明'];
+        return Array.from({ length: total }, (_, index) => ({ id: index + 1, title: total === 8 ? SMALL_TITLES[index] : `${places[Math.floor(index / 100) % 10]}の${things[Math.floor(index / 10) % 10]} 第${index + 1}巻` }));
+      }
 
-            <div id="hint-box">
-                <div>
-                    <button type="button" data-hint="1">🔍 魔法のコードを表示</button>
-                </div>
-                <div id="hint1" class="hint-text">
-                    <p>今回はこれをコピーして貼り付けよう！</p>
-                    <div class="copy-container">
-                        <code id="codeToCopy">  
-// 0000 から 9999 まで順番にしらべる
-  for (let a = 0; a < 10; a++) {
-    for (let b = 0; b < 10; b++) {
-      for (let c = 0; c < 10; c++) {
-        for (let d = 0; d < 10; d++) {const candidate = digits[a] + digits[b] + digits[c] + digits[d];</code>
-                        <button id="copyHintBtn" class="copy-btn">コピー</button>
-                    </div>
-                </div>
-            </div>
+      function releaseWorker() {
+        if (worker) worker.terminate();
+        if (workerUrl) URL.revokeObjectURL(workerUrl);
+        clearTimeout(timeout);
+        worker = null; workerUrl = null; timeout = null;
+      }
 
-<pre id="editor" class="code" contenteditable="true">function solve() {
-  const digits = ["0","1","2","3","4","5","6","7","8","9"];
-  let count = 0;
-          <span class="editable-line">  </span> // ← ここにコピーした後に、ctrlを押しながらVをおして貼り付けよう！
-          // チェック中の数字をログに出す
-          log("チェック中... " + candidate); 
-          count++;
-          if (checkPassword(candidate)) {
-            log("------------------------------");
-            log("★ みつけた！ パスワードは「" + candidate + "」✨");
-            log("★ ためした回数: " + count + " 回");
-            log("------------------------------");
-            return;
+      function stopRun(message) {
+        runVersion++;
+        releaseWorker();
+        cancelAnimationFrame(frame); frame = null; scan = null; running = false;
+        updateControls();
+        if (message) $('program-status').textContent = message;
+      }
+
+      function startStage(nextStage) {
+        stopRun();
+        stage = nextStage; books = makeBooks(stage === 1 ? 8 : 10000);
+        // 正解の場所を毎回変え、順番に探す体験にする。
+        targetId = stage === 1 ? random(3, 8) : random(5000, 9500);
+        books[targetId - 1].title = TARGET_TITLE;
+        checked = new Set(); found = false; shelf = 0;
+        if (stage === 1) firstCount = 0;
+        $('step1').className = 'step ' + (stage === 1 ? 'active' : 'done');
+        $('step2').className = 'step' + (stage === 2 ? ' active' : '');
+        $('step1').toggleAttribute('aria-current', stage === 1);
+        $('step2').toggleAttribute('aria-current', stage === 2);
+        (stage === 1 ? $('step1') : $('step2')).setAttribute('aria-current', 'step');
+        $('eyebrow').textContent = stage === 1 ? 'MISSION 01 / SMALL LIBRARY' : 'MISSION 02 / BIG LIBRARY';
+        $('title').textContent = stage === 1 ? '8冊の中から、見つけよう。' : '今度は、1万冊の中から。';
+        $('intro').textContent = stage === 1 ? 'たのまれた本は、どこにあるかな？ 1冊ずつ開いて確かめよう。' : '本がぐんと増えたね。全部を1冊ずつ調べると、どうなるだろう？';
+        $('guide-text').textContent = stage === 1 ? 'カバーで題名が見えないよ。本を開くと、中を調べられるよ！' : '人の手だけだと大変！ プログラムにも手伝ってもらおう。';
+        $('shelf-title').textContent = stage === 1 ? '小さな本棚 / 全8冊' : '大きな図書館 / 全10,000冊';
+        $('total-count').textContent = format(books.length);
+        $('pagination').hidden = stage === 1;
+        $('books').className = 'books' + (stage === 2 ? ' large' : '');
+        $('books').setAttribute('aria-label', stage === 1 ? '8冊の本' : '1万冊のうち、選んだ棚の100冊');
+        $('next-stage').hidden = true; $('open-program').hidden = stage === 1;
+        $('program-invite').hidden = stage === 1;
+        $('program').hidden = true; $('completion').hidden = true;
+        $('layout').classList.remove('with-program');
+        $('tip').textContent = stage === 1 ? '同じ本をもう一度調べる必要はないよ。' : '100冊ずつ、100の棚に分かれているよ。';
+        $('feedback').className = 'feedback';
+        $('feedback').textContent = stage === 1 ? '本を選ぶと、ここに題名が出るよ。' : '手で探してもOK。大変だと思ったら、プログラムを使ってみよう。';
+        $('editor').value = STARTER; $('hint').open = false;
+        $('output').textContent = 'ここに、本を調べる様子が表示されるよ。';
+        $('program-status').textContent = '準備ができたら、実行してみよう。';
+        $('shelf-select').replaceChildren();
+        if (stage === 2) {
+          for (let i = 0; i < 100; i++) {
+            const option = document.createElement('option'); option.value = i;
+            option.textContent = `棚 ${i + 1}（${format(i * 100 + 1)}〜${format((i + 1) * 100)}冊目）`;
+            $('shelf-select').append(option);
           }
         }
+        document.querySelectorAll('.confetti').forEach((piece) => piece.remove());
+        renderBooks(); updateProgress(); updateControls();
       }
-    }
-  }
-  log("みつけられなかったよ…");
-}
-solve();</pre>
-            <button id="runBtn">実行！</button>
-            <div id="output">実行ボタンをおすと、ここにログが流れるよ...</div>
-        </div>
-    </div>
 
-    <!-- =========================================
-         スクリプト
-         ========================================= -->
-    <script>
-        // 名前空間の衝突を避けるため、ブロックで囲んでいます
+      function paintBook(button, book) {
+        const opened = checked.has(book.id), isFound = opened && book.id === targetId;
+        button.className = 'book' + (isFound ? ' found' : opened ? ' checked' : '');
+        button.disabled = opened || found || running;
+        button.setAttribute('aria-label', `${format(book.id)}冊目${opened ? '：' + book.title + (isFound ? '、見つけた本' : '、調べた本') : 'の本を開く'}`);
+        button.title = opened ? book.title : '開いて題名を確かめる';
+        button.querySelector('.book-mark').textContent = isFound ? '★' : opened ? '✓' : '✦';
+        button.querySelector('.book-title').textContent = opened ? book.title : 'どんな本？';
+      }
 
-        // -----------------------------------------------------------
-        // 左側のロジック (Password Game)
-        // -----------------------------------------------------------
-        (() => {
-            const STAGES = {
-                1: {
-                    code: "2",
-                    length: 1,
-                    title: "１けたのパスワードを当てよう！",
-                    subtitle: "画面の数字を使って、1けたの正解を見つけてね。",
-                    idleMessage: "数字を1つ選んで入力してみよう。",
-                    successSimple: "おめでとう🎊"
-                },
-                2: {
-                    code: "0213",
-                    length: 4,
-                    title: "4けたパスワードを当てよう",
-                    subtitle: "今度は、４けたは突破できるかな？！画面の数字だけを使って入力してみよう。",
-                    idleMessage: "4けたすべて入力すると結果が表示されるよ！。",
-                }
-            };
+      function renderBooks() {
+        const fragment = document.createDocumentFragment();
+        const start = stage === 1 ? 0 : shelf * 100;
+        books.slice(start, start + (stage === 1 ? 8 : 100)).forEach((book) => {
+          const button = document.createElement('button'); button.type = 'button'; button.dataset.id = book.id;
+          button.style.setProperty('--cover', COLORS[(book.id - 1) % COLORS.length]);
+          const mark = document.createElement('span'); mark.className = 'book-mark'; mark.setAttribute('aria-hidden', 'true');
+          const title = document.createElement('span'); title.className = 'book-title';
+          const number = document.createElement('span'); number.className = 'book-number'; number.textContent = `No. ${format(book.id)}`;
+          button.append(mark, title, number); paintBook(button, book); fragment.append(button);
+        });
+        $('books').replaceChildren(fragment);
+        $('shelf-select').value = shelf;
+        $('prev').disabled = shelf === 0 || running;
+        $('next').disabled = shelf === 99 || running;
+      }
 
-            let currentStage = 1;
-            let input = "";
-            let status = "idle";
-            let isTransitioning = false;
+      function updateProgress() {
+        $('checked-count').textContent = format(checked.size);
+        $('progress').setAttribute('aria-valuemax', books.length);
+        $('progress').setAttribute('aria-valuenow', checked.size);
+        $('progress-fill').style.width = `${checked.size / books.length * 100}%`;
+      }
 
-            const leftPanel = document.getElementById("left-panel");
-            const cardTitle = document.getElementById("card-title");
-            const cardSubtitle = document.getElementById("card-subtitle");
-            const inputDisplay = document.getElementById("input-display");
-            const resetButton = document.getElementById("reset-button");
-            const digitsGrid = document.getElementById("digits-grid");
-            const messageArea = document.getElementById("message-area");
-            const messageText = document.getElementById("message-text");
-            const statusImage = document.getElementById("status-image");
-            const imageContainer = document.getElementById("image-circle-container");
-            
-            // 追加要素
-            const rightPanel = document.getElementById("right-panel");
-            const progTriggerWrapper = document.getElementById("prog-trigger-wrapper");
-            const openProgBtn = document.getElementById("open-prog-btn");
+      function updateControls() {
+        $('run').disabled = running || !!found;
+        $('stop').disabled = !running;
+        $('editor').readOnly = running;
+        ['insert-code', 'reset-code', 'shelf-select'].forEach((id) => { $(id).disabled = running; });
+        if (books) {
+          $('prev').disabled = shelf === 0 || running;
+          $('next').disabled = shelf === 99 || running;
+          $('books').querySelectorAll('button').forEach((button) => paintBook(button, books[Number(button.dataset.id) - 1]));
+        }
+      }
 
-            function triggerConfetti() {
-                const duration = 2000;
-                const animationEnd = Date.now() + duration;
-                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
-                const randomInRange = (min, max) => Math.random() * (max - min) + min;
+      function celebrate() {
+        if (!motion()) return;
+        for (let i = 0; i < 36; i++) {
+          const piece = document.createElement('span'); piece.className = 'confetti';
+          piece.style.left = `${Math.random() * 100}%`; piece.style.background = [COLORS[0], '#efc66a', '#bb795f'][i % 3];
+          piece.style.animationDelay = `${Math.random() * .5}s`;
+          document.body.append(piece); setTimeout(() => piece.remove(), 2600);
+        }
+      }
 
-                const interval = setInterval(function () {
-                    const timeLeft = animationEnd - Date.now();
-                    if (timeLeft <= 0) return clearInterval(interval);
+      function complete(method) {
+        if (found) return;
+        found = true;
+        $('feedback').className = 'feedback success';
+        $('feedback').textContent = `見つけた！ No. ${format(targetId)} は『${TARGET_TITLE}』。${format(checked.size)}冊を調べたよ！`;
+        if (stage === 1) {
+          firstCount = checked.size; $('next-stage').hidden = false;
+          $('tip').textContent = '8冊なら、手で探して見つけられたね。';
+          $('next-stage').focus({ preventScroll: true });
+        } else {
+          $('program-invite').hidden = true; $('completion').hidden = false;
+          $('reflection').textContent = `最初の8冊では${firstCount}冊、今度の1万冊では${format(checked.size)}冊を${method === 'program' ? 'プログラムで' : '自分の手で'}調べて、目的の本にたどり着いたね。`;
+          $('completion-title').focus({ preventScroll: true });
+          $('completion').scrollIntoView({ behavior: motion() ? 'smooth' : 'instant', block: 'nearest' });
+        }
+        updateControls(); celebrate();
+      }
 
-                    const particleCount = 50 * (timeLeft / duration);
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-                }, 250);
+      $('books').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-id]');
+        if (!button || found || running) return;
+        const id = Number(button.dataset.id);
+        if (checked.has(id)) return;
+        checked.add(id); updateProgress(); paintBook(button, books[id - 1]);
+        if (id === targetId) complete('manual');
+        else $('feedback').textContent = `No. ${format(id)} は『${books[id - 1].title}』だったよ。次の本も調べてみよう。`;
+      });
+      $('restart').addEventListener('click', () => { startStage(1); $('title').focus(); window.scrollTo({ top: 0 }); });
+      $('next-stage').addEventListener('click', () => { startStage(2); $('title').focus(); window.scrollTo({ top: 0 }); });
+      $('prev').addEventListener('click', () => { if (!running && shelf > 0) { shelf--; renderBooks(); } });
+      $('next').addEventListener('click', () => { if (!running && shelf < 99) { shelf++; renderBooks(); } });
+      $('shelf-select').addEventListener('change', (event) => { if (!running) { shelf = Number(event.target.value); renderBooks(); } });
+      $('open-program').addEventListener('click', () => {
+        $('program').hidden = false; $('layout').classList.add('with-program'); $('open-program').hidden = true;
+        $('program-invite').hidden = true;
+        $('program-title').focus({ preventScroll: true });
+        $('program').scrollIntoView({ behavior: motion() ? 'smooth' : 'instant', block: 'start' });
+      });
+      $('sample-code').textContent = SAMPLE;
+      $('insert-code').addEventListener('click', () => { $('editor').value = SAMPLE; $('editor').focus(); $('program-status').textContent = 'くり返しのコードが入ったよ。実行してみよう！'; });
+      $('copy-code').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(SAMPLE); $('program-status').textContent = 'コピーしたよ。エディターに貼り付けよう！'; }
+        catch { $('program-status').textContent = 'コピーできなかったよ。「このコードを入れる」ボタンを使ってね。'; }
+      });
+      $('reset-code').addEventListener('click', () => { $('editor').value = STARTER; $('program-status').textContent = '先頭の1冊を調べるコードに戻したよ。'; });
+
+      // 編集したコードはWorkerで実行し、停止・時間制限が効くようにする。
+      function runInWorker(data) {
+        const records = data.books;
+        const checks = [], logs = [];
+        const validIds = new Set(records.map((book) => book.id));
+        function checkBook(book) {
+          if (!book || !validIds.has(book.id)) throw new Error('books の中の本を checkBook(book) で調べよう。');
+          if (checks.length >= 20000) throw new Error('同じ本を何度も調べているかも。くり返しの条件を見直してね。');
+          checks.push(book.id);
+          const ok = book.id === data.targetId;
+          return ok;
+        }
+        function log(message) { if (logs.length < 120) logs.push(String(message).slice(0, 500)); }
+        let error = '';
+        try { new Function('books', 'checkBook', 'log', '"use strict";\n' + data.code)(records, checkBook, log); }
+        catch (e) { error = String(e.message || e); }
+        self.postMessage({ checks, logs, error });
+      }
+
+      function addLog(message) {
+        const line = document.createElement('div'); line.textContent = message; $('output').append(line);
+        while ($('output').childElementCount > 140) $('output').firstElementChild.remove();
+        $('output').scrollTop = $('output').scrollHeight;
+      }
+
+      function animateResult(result, version) {
+        scan = { index: 0, result };
+        function tick() {
+          if (!running || version !== runVersion) return;
+          let lastId = null, matchedThisFrame = false;
+          for (let i = 0; i < 70 && scan.index < result.checks.length; i++) {
+            lastId = result.checks[scan.index++]; checked.add(lastId);
+            if (lastId === targetId) { matchedThisFrame = true; break; }
+          }
+          if (lastId !== null) {
+            const nextShelf = Math.floor((lastId - 1) / 100);
+            if (nextShelf !== shelf) { shelf = nextShelf; renderBooks(); }
+            else updateControls();
+            updateProgress();
+            addLog(`No. ${format(lastId)}『${books[lastId - 1].title}』を確認 / ${format(scan.index)}回調べた`);
+            $('program-status').textContent = `${format(scan.index)}回調べたよ。1冊ずつ、順番に確認中…`;
+          }
+          if (matchedThisFrame || scan.index >= result.checks.length) {
+            const attempts = scan.index;
+            result.logs.forEach(addLog);
+            if (result.logs.length === 120) addLog('（コードからのログは、先頭の120行まで表示しているよ。）');
+            if (result.error) addLog('エラー：' + result.error);
+            stopRun();
+            if (matchedThisFrame) {
+              addLog(`★ 見つけた！ No. ${format(targetId)}『${TARGET_TITLE}』`);
+              $('program-status').textContent = `${format(attempts)}回調べて、目的の本を見つけたよ！`;
+              complete('program');
+            } else {
+              $('program-status').textContent = result.error ? 'コードを直して、もう一度実行してみよう。' : 'まだ見つからなかったね。ヒントの「くり返し」を使ってみよう。';
+              if (!result.checks.length && !result.error) addLog('本はまだ調べていないよ。checkBook(book) を使ってみよう。');
             }
+            return;
+          }
+          frame = requestAnimationFrame(tick);
+        }
+        frame = requestAnimationFrame(tick);
+      }
 
-            function updateUI() {
-                const config = STAGES[currentStage];
-                cardTitle.textContent = config.title;
-                cardSubtitle.textContent = config.subtitle;
-
-                let placeholder = "";
-                for (let i = 0; i < config.length; i++) placeholder += "_";
-                const padded = (input + placeholder).slice(0, config.length);
-                inputDisplay.textContent = padded;
-
-                const buttons = digitsGrid.querySelectorAll("button");
-                buttons.forEach((btn) => {
-                    btn.disabled = isTransitioning || input.length >= config.length;
-                });
-                resetButton.disabled = isTransitioning;
-
-                messageText.className = "";
-                messageArea.className = "message-area";
-                
-                if (!(currentStage === 1 && status === "success")) {
-                    imageContainer.classList.remove("animate-tada");
-                    leftPanel.classList.remove("success-mode");
-                }
-
-                // --- 追加ロジック: ステージ2になったらボタンを表示 ---
-                if (currentStage === 2) {
-                    progTriggerWrapper.style.display = "block";
-                } else {
-                    progTriggerWrapper.style.display = "none";
-                    rightPanel.classList.remove("open"); // ステージ1に戻ったら閉じる（念の為）
-                }
-
-                if (status === "idle") {
-                    messageText.classList.add("message-idle");
-                    messageText.textContent = config.idleMessage;
-                } else if (status === "error") {
-                    messageText.classList.add("message-error");
-                    messageText.textContent = "残念！違います。もう一度試してみましょう。";
-                } else if (status === "success") {
-                    leftPanel.classList.add("success-mode");
-                    messageArea.classList.add("success-style");
-                    messageArea.classList.add("animate-bounce-in");
-                    imageContainer.classList.add("animate-tada");
-
-                    if (currentStage === 1) {
-                        messageText.innerHTML = `<p class="message-success-title" style="font-size:1.5rem;">${config.successSimple}</p>`;
-                    } else {
-                        messageText.innerHTML =
-                            '<div>' +
-                            '<p class="message-success-title">🎉 正解！パスワードは 0213 でした。</p>' +
-                            '<p class="message-success-text">' +
-                            "青翔開智中学校・高等学校の " +
-                            '<span class="message-strong">青開学会</span> は、' +
-                            '<span class="message-strong">2月13日</span> に開催です。全国からいろんな人が観にくるよ！<span class="message-strong">ぜひ来てね！</span>' +
-                            "</p>" +
-                            '<p class="message-success-text" style="margin-top:8px;">スタンプラリーのキーワードは「<span class="message-strong">グローバル</span>」だよ！</p>' +
-                            '<p>次のクエストに向かおう！</p>' +
-                            "</div>";
-                        statusImage.src = "https://i.postimg.cc/rFyrjVb9/fu-kkurin03.png";
-                    }
-                }
+      $('run').addEventListener('click', () => {
+        if (running || found || stage !== 2) return;
+        stopRun(); running = true; updateControls();
+        const version = runVersion;
+        $('output').replaceChildren(); $('program-status').textContent = 'プログラムを実行しているよ…';
+        try {
+          workerUrl = URL.createObjectURL(new Blob([`self.onmessage = (event) => { (${runInWorker.toString()})(event.data); };`], { type: 'text/javascript' }));
+          worker = new Worker(workerUrl);
+          worker.onmessage = (event) => {
+            if (version !== runVersion) return;
+            releaseWorker();
+            const result = event.data;
+            if (!Array.isArray(result.checks) || !Array.isArray(result.logs) || result.checks.some((id) => !Number.isInteger(id) || id < 1 || id > books.length)) {
+              stopRun('実行結果を読み取れなかったよ。コードをもとに戻して試してね。'); return;
             }
-
-            function transitionToNextStage() {
-                isTransitioning = true;
-                updateUI();
-                setTimeout(() => {
-                    currentStage = 2;
-                    input = "";
-                    status = "idle";
-                    isTransitioning = false;
-                    leftPanel.classList.remove("success-mode");
-                    messageArea.classList.remove("success-style");
-                    messageArea.classList.remove("animate-bounce-in");
-                    imageContainer.classList.remove("animate-tada");
-                    statusImage.src = "https://i.postimg.cc/fLXxG8jV/fu-kkurin01.png";
-                    updateUI();
-                }, 1500);
-            }
-
-            function handleDigitClick(digit) {
-                if (isTransitioning) return;
-                const config = STAGES[currentStage];
-                if (input.length >= config.length) return;
-
-                const next = input + digit;
-                input = next;
-
-                if (next.length === config.length) {
-                    if (next === config.code) {
-                        status = "success";
-                        triggerConfetti();
-                        if (currentStage === 1) {
-                            transitionToNextStage();
-                        }
-                    } else {
-                        status = "error";
-                    }
-                } else {
-                    status = "idle";
-                }
-                updateUI();
-            }
-
-            resetButton.addEventListener("click", () => {
-                if (isTransitioning) return;
-                input = "";
-                status = "idle";
-                updateUI();
-            });
-
-            // トリガーボタンのイベント
-            openProgBtn.addEventListener("click", () => {
-                rightPanel.classList.add("open");
-                // ボタンは役割を終えたので消す、あるいは残しておく？
-                // 一度開いたら閉じない仕様であれば消しても良いが、
-                // トグルできるようにするなら残す。今回は「現れる」目的なので、
-                // 開いた後はボタンを目立たなくするか消すのが自然。
-                // ここでは非表示にします。
-                progTriggerWrapper.style.display = "none";
-                
-                // モバイルなどではスクロールが必要かも
-                setTimeout(() => {
-                    if (window.innerWidth <= 800) {
-                         rightPanel.scrollIntoView({ behavior: 'smooth' });
-                    }
-                }, 300);
-            });
-
-            function setupDigitButtons() {
-                const digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-                digits.forEach((d) => {
-                    const btn = document.createElement("button");
-                    btn.type = "button";
-                    btn.textContent = d;
-                    btn.className = "digit-button";
-                    btn.addEventListener("click", () => handleDigitClick(d));
-                    digitsGrid.appendChild(btn);
-                });
-            }
-
-            setupDigitButtons();
-            updateUI();
-        })();
-
-
-        // -----------------------------------------------------------
-        // 右側のロジック (Programming Master)
-        // -----------------------------------------------------------
-        (() => {
-            const SECRET = "0213";
-            let logQueue = [];
-            let isProcessingLogs = false;
-
-            function spawnParticles() {
-                // パーティクルは全体に出すため document.body に append (z-indexで最前面)
-                for (let i = 0; i < 40; i++) {
-                    const p = document.createElement("div");
-                    p.className = "particle";
-                    p.style.left = (Math.random() * window.innerWidth) + "px";
-                    p.style.top = (Math.random() * 40) + "px";
-                    p.style.background = `hsl(${Math.random() * 360}, 90%, 80%)`;
-                    document.body.appendChild(p);
-                    setTimeout(() => p.remove(), 1200);
-                }
-            }
-
-            function triggerCorrectEffect() {
-                const out = document.getElementById("output");
-                if (!out) return;
-                out.classList.remove("correct-flash");
-                void out.offsetWidth;
-                out.classList.add("correct-flash");
-                spawnParticles();
-            }
-
-            function triggerIncorrectEffect() {
-                const out = document.getElementById("output");
-                if (!out) return;
-                out.classList.remove("incorrect-flash");
-                void out.offsetWidth;
-                out.classList.add("incorrect-flash");
-                setTimeout(() => {
-                    out.style.borderColor = "#333";
-                    out.classList.remove("incorrect-flash");
-                }, 400);
-            }
-
-            function checkPassword(x) {
-                const ok = (x === SECRET);
-                if (ok) {
-                    logQueue.push({ type: 'effect', name: 'correct' });
-                }
-                return ok;
-            }
-
-            function logToQueue(msg) {
-                logQueue.push({ type: 'text', content: msg });
-            }
-
-            function processLogQueue() {
-                const output = document.getElementById("output");
-                function loop() {
-                    if (logQueue.length === 0) {
-                        isProcessingLogs = false;
-                        return;
-                    }
-
-                    let speed = 1;
-                    if (logQueue.length > 500) speed = 50;
-                    else if (logQueue.length > 100) speed = 10;
-                    else speed = 2;
-
-                    for (let i = 0; i < speed; i++) {
-                        if (logQueue.length === 0) break;
-                        const item = logQueue.shift();
-                        if (item.type === 'text') {
-                            const div = document.createElement("div");
-                            div.textContent = item.content;
-                            div.className = "log-line";
-                            if (item.content.includes("みつけた")) {
-                                div.classList.add("log-highlight");
-                            }
-                            output.appendChild(div);
-                        } else if (item.type === 'effect' && item.name === 'correct') {
-                            triggerCorrectEffect();
-                        }
-                    }
-                    output.scrollTop = output.scrollHeight;
-                    requestAnimationFrame(loop);
-                }
-                loop();
-            }
-
-            function copyToClipboard(text, buttonElement) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                let success = false;
-                try { success = document.execCommand('copy'); } catch (err) { }
-                document.body.removeChild(textarea);
-                if (success && buttonElement) {
-                    const originalText = buttonElement.textContent;
-                    const originalBg = buttonElement.style.backgroundColor;
-                    buttonElement.textContent = 'コピーOK!';
-                    buttonElement.style.backgroundColor = '#2196F3';
-                    setTimeout(() => {
-                        buttonElement.textContent = originalText;
-                        buttonElement.style.backgroundColor = originalBg;
-                    }, 1500);
-                }
-            }
-
-            const editor = document.getElementById("editor");
-            const output = document.getElementById("output");
-            const runBtn = document.getElementById("runBtn");
-            const hintButtons = document.querySelectorAll('#hint-box button[data-hint]');
-            const hint1 = document.getElementById('hint1');
-            const copyHintBtn = document.getElementById('copyHintBtn');
-            const codeToCopy = document.getElementById('codeToCopy');
-
-            hintButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (btn.getAttribute('data-hint') === '1') hint1.style.display = 'block';
-                });
-            });
-
-            if (copyHintBtn && codeToCopy) {
-                copyHintBtn.addEventListener('click', () => {
-                    copyToClipboard(codeToCopy.textContent.trim(), copyHintBtn);
-                });
-            }
-
-            runBtn.onclick = () => {
-                // 自動で出力エリアまでスクロール
-                output.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
-                output.textContent = "";
-                logQueue = [];
-                const code = editor.textContent;
-                const log = (m) => logToQueue(m);
-
-                try {
-                    new Function("checkPassword", "log", code)(checkPassword, log);
-                    if (logQueue.length === 0) {
-                        log("何もおきなかったよ...");
-                    } else {
-                        const hasSuccess = logQueue.some(item => item.type === 'effect' && item.name === 'correct');
-                        if (!hasSuccess) {
-                            logQueue.push({ type: 'text', content: '（パスワードが違ったみたい...）' });
-                            setTimeout(triggerIncorrectEffect, 500);
-                        }
-                    }
-                    processLogQueue();
-                } catch (e) {
-                    output.textContent = "エラー: " + e.message;
-                    triggerIncorrectEffect();
-                }
-            };
-        })();
-    </script>
+            animateResult(result, version);
+          };
+          worker.onerror = (event) => { event.preventDefault(); if (version === runVersion) { addLog('実行エラー。コードをもとに戻して試してね。'); stopRun('プログラムを実行できなかったよ。'); } };
+          timeout = setTimeout(() => { if (version === runVersion) { addLog('時間がかかったので停止したよ。くり返しが終わる条件を確認しよう。'); stopRun('プログラムを停止したよ。コードを直して試してね。'); } }, 3000);
+          worker.postMessage({ books, targetId, code: $('editor').value });
+        } catch (error) { addLog('実行エラー：' + error.message); stopRun('プログラムを実行できなかったよ。'); }
+      });
+      $('stop').addEventListener('click', () => stopRun('停止したよ。調べた本は、そのまま残っているよ。'));
+      window.addEventListener('pagehide', () => stopRun());
+      startStage(1);
+    })();
+  </script>
 </body>
 </html>
